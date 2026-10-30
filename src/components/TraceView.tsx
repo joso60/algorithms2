@@ -180,30 +180,336 @@ export const TraceView: React.FC<TraceViewProps> = ({
     }
   };
 
-  const renderBTreeNode = (node: BTreeNodeView, depth = 0): React.ReactNode => {
-    const badgeColor =
-      node.highlight === 'split'
-        ? 'border-amber-400 bg-amber-500/20 text-amber-200 shadow-lg shadow-amber-500/10'
-        : node.highlight === 'borrowed'
-          ? 'border-indigo-400 bg-indigo-500/20 text-indigo-200 shadow-lg shadow-indigo-500/10'
-          : node.highlight === 'found' || node.highlight === 'active'
-            ? 'border-emerald-400 bg-emerald-500/20 text-emerald-200 shadow-lg shadow-emerald-500/10'
-            : 'border-slate-700 bg-slate-800/90 text-slate-100';
+  const renderBTreeDiagram = (root: BTreeNodeView, order: number): React.ReactNode => {
+    const KEY_CELL_W = 42;
+    const KEY_ROW_H = 34;
+    const PTR_ROW_H = 18;
+    const NODE_H = KEY_ROW_H + PTR_ROW_H;
+    const H_GAP = 26;
+    const LEVEL_GAP = 122;
+    const TOP_PAD = 34;
+    const SIDE_PAD = 28;
+
+    interface LayoutNode {
+      node: BTreeNodeView;
+      nodeW: number;
+      subtreeW: number;
+      centerX: number;
+      topY: number;
+      depth: number;
+      children: LayoutNode[];
+    }
+
+    interface ArrowEdge {
+      id: string;
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      highlight?: string;
+    }
+
+    let maxDepth = 0;
+
+    const buildLayout = (n: BTreeNodeView, depth: number): LayoutNode => {
+      if (depth > maxDepth) maxDepth = depth;
+      const kCount = Math.max(1, n.keys.length);
+      const nodeW = Math.max(52, kCount * KEY_CELL_W);
+      const childLayouts = (n.children || []).map((ch) => buildLayout(ch, depth + 1));
+
+      const childrenTotalW =
+        childLayouts.length > 0
+          ? childLayouts.reduce((acc, c) => acc + c.subtreeW, 0) +
+            (childLayouts.length - 1) * H_GAP
+          : 0;
+
+      const minBadgeW = n.badgeText ? Math.max(nodeW, n.badgeText.length * 6.5 + 16) : nodeW;
+      const subtreeW = Math.max(nodeW, childrenTotalW, minBadgeW);
+
+      return {
+        node: n,
+        nodeW,
+        subtreeW,
+        centerX: 0,
+        topY: TOP_PAD + depth * LEVEL_GAP,
+        depth,
+        children: childLayouts,
+      };
+    };
+
+    const rootLayout = buildLayout(root, 0);
+    const allNodes: LayoutNode[] = [];
+    const allArrows: ArrowEdge[] = [];
+
+    const assignPositions = (ln: LayoutNode, leftX: number) => {
+      ln.centerX = leftX + ln.subtreeW / 2;
+      allNodes.push(ln);
+
+      if (ln.children.length > 0) {
+        const childrenSpan =
+          ln.children.reduce((acc, c) => acc + c.subtreeW, 0) +
+          (ln.children.length - 1) * H_GAP;
+        let cursorX = ln.centerX - childrenSpan / 2;
+
+        const numSlots = Math.max(ln.node.keys.length + 1, ln.children.length);
+        const slotW = ln.nodeW / numSlots;
+        const nodeLeft = ln.centerX - ln.nodeW / 2;
+
+        ln.children.forEach((childLn, idx) => {
+          assignPositions(childLn, cursorX);
+          const startX = nodeLeft + (idx + 0.5) * slotW;
+          const startY = ln.topY + KEY_ROW_H + PTR_ROW_H / 2;
+          const endX = childLn.centerX;
+          const endY = childLn.topY - 2;
+
+          allArrows.push({
+            id: `${ln.node.id}->${childLn.node.id}-${idx}`,
+            x1: startX,
+            y1: startY,
+            x2: endX,
+            y2: endY,
+            highlight: childLn.node.highlight,
+          });
+
+          cursorX += childLn.subtreeW + H_GAP;
+        });
+      }
+    };
+
+    assignPositions(rootLayout, SIDE_PAD);
+
+    const canvasW = Math.max(520, rootLayout.subtreeW + SIDE_PAD * 2);
+    const canvasH = TOP_PAD + (maxDepth + 1) * NODE_H + maxDepth * (LEVEL_GAP - NODE_H) + 28;
 
     return (
-      <div key={node.id} className="flex flex-col items-center">
+      <div className="w-full overflow-x-auto pb-2">
         <div
-          className={`flex items-center divide-x divide-slate-600/60 rounded-lg border-2 px-2 py-1.5 font-mono text-sm font-bold transition-all ${badgeColor}`}
+          className="relative mx-auto select-none"
+          style={{ width: `${canvasW}px`, height: `${canvasH}px` }}
         >
-          {node.keys.map((k, idx) => (
-            <span key={idx} className="px-2.5 py-0.5">
-              {k}
-            </span>
-          ))}
+          {/* SVG Layer for Pointer Dots & Directed Arrows */}
+          <svg
+            width={canvasW}
+            height={canvasH}
+            className="pointer-events-none absolute inset-0 z-10"
+          >
+            <defs>
+              <marker
+                id="btree-arrow-normal"
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#94a3b8" />
+              </marker>
+              <marker
+                id="btree-arrow-active"
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="6.5"
+                markerHeight="6.5"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#fbbf24" />
+              </marker>
+              <marker
+                id="btree-arrow-overflow"
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="6.5"
+                markerHeight="6.5"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#fb7185" />
+              </marker>
+            </defs>
+
+            {allArrows.map((edge) => {
+              const isOverflow = edge.highlight === 'overflow';
+              const isHighlighted =
+                edge.highlight === 'split' ||
+                edge.highlight === 'active' ||
+                edge.highlight === 'found' ||
+                edge.highlight === 'borrowed';
+
+              const strokeColor = isOverflow
+                ? '#fb7185'
+                : isHighlighted
+                  ? '#fbbf24'
+                  : '#94a3b8';
+
+              const markerUrl = isOverflow
+                ? 'url(#btree-arrow-overflow)'
+                : isHighlighted
+                  ? 'url(#btree-arrow-active)'
+                  : 'url(#btree-arrow-normal)';
+
+              return (
+                <g key={edge.id}>
+                  {/* Origin dot inside the parent's bottom pointer slot */}
+                  <circle cx={edge.x1} cy={edge.y1} r={2.5} fill={strokeColor} />
+                  {/* Directed arrow line to child node top-center */}
+                  <line
+                    x1={edge.x1}
+                    y1={edge.y1}
+                    x2={edge.x2}
+                    y2={edge.y2}
+                    stroke={strokeColor}
+                    strokeWidth={isOverflow || isHighlighted ? 2 : 1.6}
+                    markerEnd={markerUrl}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* HTML Node Boxes (Two-Row Slide Structure: Keys Row + Child Pointer Slots Row) */}
+          {allNodes.map((ln) => {
+            const { node, nodeW, centerX, topY } = ln;
+            const left = centerX - nodeW / 2;
+            const isInternal = node.children && node.children.length > 0;
+            const numPtrSlots = Math.max(
+              node.keys.length + 1,
+              node.children ? node.children.length : 0
+            );
+
+            let boxBorder = 'border-slate-500 bg-slate-900/95 text-slate-100';
+            let badgeStyle = 'border-slate-700 bg-slate-800 text-slate-200';
+
+            if (node.highlight === 'overflow') {
+              boxBorder =
+                'border-rose-500 bg-rose-950/60 text-rose-100 ring-2 ring-rose-500/40 shadow-lg shadow-rose-500/20';
+              badgeStyle = 'border-rose-400/70 bg-rose-600 text-white font-bold shadow';
+            } else if (node.highlight === 'split') {
+              boxBorder =
+                'border-amber-400 bg-amber-950/40 text-amber-100 ring-1 ring-amber-400/40 shadow-md shadow-amber-500/10';
+              badgeStyle = 'border-amber-400/60 bg-amber-500/25 text-amber-200 font-semibold';
+            } else if (node.highlight === 'borrowed' || node.highlight === 'merged') {
+              boxBorder =
+                'border-indigo-400 bg-indigo-950/50 text-indigo-100 ring-1 ring-indigo-400/40 shadow-md';
+              badgeStyle = 'border-indigo-400/60 bg-indigo-500/25 text-indigo-200 font-semibold';
+            } else if (node.highlight === 'found' || node.highlight === 'active') {
+              boxBorder =
+                'border-emerald-400 bg-emerald-950/40 text-emerald-100 ring-1 ring-emerald-400/40 shadow-md shadow-emerald-500/10';
+              badgeStyle = 'border-emerald-400/60 bg-emerald-500/25 text-emerald-200 font-semibold';
+            }
+
+            return (
+              <div
+                key={node.id}
+                style={{
+                  left: `${left}px`,
+                  top: `${topY}px`,
+                  width: `${nodeW}px`,
+                  height: `${NODE_H}px`,
+                }}
+                className="absolute z-0"
+              >
+                {/* Floating Badge above node (Overflow / Split / Promoted Key) */}
+                {node.badgeText && (
+                  <div
+                    className={`pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-0.5 font-mono text-[10px] ${badgeStyle}`}
+                  >
+                    {node.badgeText}
+                  </div>
+                )}
+
+                {/* Two-Row Node Box */}
+                <div
+                  className={`flex h-full w-full flex-col overflow-hidden rounded-md border-2 font-mono transition-all ${boxBorder}`}
+                >
+                  {/* Top Row: Ordered Keys k_1 .. k_j */}
+                  <div
+                    className="grid divide-x divide-slate-600/80"
+                    style={{
+                      height: `${KEY_ROW_H}px`,
+                      gridTemplateColumns: `repeat(${Math.max(1, node.keys.length)}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {node.keys.map((k, kIdx) => {
+                      const isMedian =
+                        node.medianKey !== undefined && String(node.medianKey) === String(k);
+                      const isActiveKey =
+                        !isMedian &&
+                        node.activeKey !== undefined &&
+                        String(node.activeKey) === String(k);
+
+                      return (
+                        <div
+                          key={kIdx}
+                          title={
+                            isMedian
+                              ? `Median Key '${k}' (will be pushed up to parent)`
+                              : isActiveKey
+                                ? `Active / Newly Inserted Key '${k}'`
+                                : `Key ${k}`
+                          }
+                          className={`flex items-center justify-center text-xs font-bold ${
+                            isMedian
+                              ? 'bg-cyan-500/35 text-cyan-200 ring-1 ring-inset ring-cyan-300 font-extrabold'
+                              : isActiveKey
+                                ? 'bg-emerald-500/30 text-emerald-200 font-extrabold'
+                                : ''
+                          }`}
+                        >
+                          {k}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom Row: k + 1 Child Pointer Slots (p_0 .. p_k) matching Slide Diagrams */}
+                  <div
+                    className="grid divide-x divide-slate-600/80 border-t border-slate-600/90"
+                    style={{
+                      height: `${PTR_ROW_H}px`,
+                      gridTemplateColumns: `repeat(${numPtrSlots}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {Array.from({ length: numPtrSlots }).map((_, pIdx) => (
+                      <div
+                        key={pIdx}
+                        title={
+                          isInternal
+                            ? `Pointer slot p_${pIdx} → Child #${pIdx + 1}`
+                            : `Null leaf pointer p_${pIdx}`
+                        }
+                        className={`flex items-center justify-center ${
+                          isInternal ? 'bg-rose-500/15' : 'bg-slate-950/75'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        {node.children && node.children.length > 0 && (
-          <div className="mt-5 flex flex-wrap items-start justify-center gap-4 border-t border-slate-700/80 pt-4">
-            {node.children.map((child) => renderBTreeNode(child, depth + 1))}
+
+        {/* Visual Legend for Slide Two-Row Node Structure */}
+        {order > 2 && (
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-4 border-t border-slate-800/80 pt-3 text-[11px] font-mono text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-4 rounded-xs border border-slate-500 bg-slate-900" />
+              Top Row: Keys (k₁..kⱼ)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-4 rounded-xs border border-slate-600 bg-rose-500/20" />
+              Bottom Row: Child Pointer Slots (p₀..pⱼ)
+            </span>
+            <span className="flex items-center gap-1.5 text-cyan-300">
+              <span className="inline-block h-3 w-3 rounded-xs border border-cyan-300 bg-cyan-500/35" />
+              Median Key (Pushed Up on Split)
+            </span>
+            <span className="flex items-center gap-1.5 text-rose-300">
+              <span className="inline-block h-3 w-3 rounded-xs border border-rose-500 bg-rose-950" />
+              Overflow Node (&gt; Max Keys {order - 1})
+            </span>
           </div>
         )}
       </div>
@@ -858,8 +1164,8 @@ export const TraceView: React.FC<TraceViewProps> = ({
                     </span>
                   )}
                 </div>
-                <div className="flex justify-center overflow-x-auto py-4">
-                  {renderBTreeNode(currentStep.bTreeView.root)}
+                <div className="flex justify-center overflow-x-auto py-2">
+                  {renderBTreeDiagram(currentStep.bTreeView.root, currentStep.bTreeView.order)}
                 </div>
               </div>
             )}

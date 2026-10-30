@@ -71,8 +71,11 @@ export interface BTreeNodeView {
   id: string;
   keys: (string | number)[];
   children?: BTreeNodeView[];
-  highlight?: 'active' | 'split' | 'merged' | 'borrowed' | 'found';
+  highlight?: 'active' | 'split' | 'merged' | 'borrowed' | 'found' | 'overflow';
   level?: number;
+  activeKey?: string | number;
+  medianKey?: string | number;
+  badgeText?: string;
 }
 
 export interface GraphEdgeView {

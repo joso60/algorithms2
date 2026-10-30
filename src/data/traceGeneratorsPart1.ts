@@ -1,4 +1,10 @@
-import type { TraceStep, VisualTable, TableCellData, StringAlignmentView } from '../types/algorithm';
+import type {
+  TraceStep,
+  VisualTable,
+  TableCellData,
+  StringAlignmentView,
+  BTreeNodeView,
+} from '../types/algorithm';
 
 // ============================================================================
 // 1. COMPARISON COUNTING SORT (0-based indexing: 0 to n-1)
@@ -972,21 +978,56 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
 }
 
 // ============================================================================
-// 7. B-TREES (Order m, Node Splitting & Exam Deletion Scenarios)
+// 7. B-TREES (Order m, Recursive Percolate-Up Splitting & Exam Deletion Scenarios)
 // ============================================================================
 export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceStep[] {
-  const m = Math.max(3, Math.min(7, Number(orderStr) || 4));
+  const m = Math.max(3, Math.min(7, Number(orderStr) || 5));
   const minKeys = Math.ceil(m / 2) - 1;
   const maxKeys = m - 1;
   const steps: TraceStep[] = [];
 
+  const buildBoundsTable = (orderM: number): VisualTable => {
+    const c = Math.ceil(orderM / 2);
+    return {
+      id: 'btree-level-bounds',
+      title: `B-Tree Level & Key Bounds Table (Order m = ${orderM}, ⌈m/2⌉ = ${c})`,
+      subtitle: 'Matches Lecture 07 Slides 131–133 Formal Analysis',
+      colHeaders: ['Level i', 'Min Nodes at Level i', 'Min Keys at Level i', 'Formula for Min Keys'],
+      rows: [0, 1, 2, 3].map((lvl) => {
+        const minNodes = lvl === 0 ? 1 : 2 * Math.pow(c, lvl - 1);
+        const minK = lvl === 0 ? 1 : 2 * Math.pow(c, lvl - 1) * (c - 1);
+        return [
+          { value: `Level ${lvl}${lvl === 0 ? ' (Root)' : ''}` },
+          { value: minNodes, state: 'computed' as const },
+          {
+            value: minK,
+            state: 'match' as const,
+            editableKey: `bt-bound-${lvl}`,
+            expectedValue: minK,
+            mistakeExplanation: `At level ${lvl}, minimum nodes = ${minNodes} and each non-root node has at least ⌈${orderM}/2⌉ - 1 = ${c - 1} keys.`,
+          },
+          { value: lvl === 0 ? '1' : `2 · ⌈m/2⌉^(${lvl - 1}) · (⌈m/2⌉ - 1) = ${minK}` },
+        ];
+      }),
+    };
+  };
+
   if (exampleKey === 'fall2025-q8') {
     // Exact Fall 2025 MidTerm Q8: Initial B-Tree (m=4) + Insert 19, 56, 87, 42, 77
-    const snapshots = [
+    // With explicit intermediate Overflow sub-steps!
+    const snapshots: {
+      title: string;
+      codeLine: number;
+      explanation: string;
+      formula: string;
+      tree: BTreeNodeView;
+      tableRow: string[];
+    }[] = [
       {
         title: 'Initial B-Tree (Order m = 4, Min Keys = 1, Max Keys = 3)',
         codeLine: 1,
-        explanation: 'Initial B-Tree from Fall 2025 Midterm Q8: Root [47, 68] with 3 leaf children: [13, 24, 38], [59, 64], and [71, 82, 95].',
+        explanation:
+          'Initial B-Tree from Fall 2025 Midterm Q8: Root [47, 68] with 3 leaf children: [13, 24, 38], [59, 64], and [71, 82, 95].',
         formula: `Order m = 4 ⇒ Min Keys = ⌈4/2⌉ - 1 = 1, Max Keys = 4 - 1 = 3`,
         tree: {
           id: 'root',
@@ -997,30 +1038,58 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
             { id: 'c3', keys: [71, 82, 95] },
           ],
         },
-        tableRow: ['Initial', '[47, 68]', '[13, 24, 38] | [59, 64] | [71, 82, 95]', 'No split'],
+        tableRow: ['Initial', '[47, 68]', '[13, 24, 38] | [59, 64] | [71, 82, 95]', 'Initial State'],
       },
       {
-        title: 'Insert 19 → Leaf [13, 24, 38] Overflows (4 Keys) → Split & Push Up 24',
-        codeLine: 5,
-        explanation: 'Search for 19 leads to leftmost leaf [13, 24, 38]. Inserting 19 gives [13, 19, 24, 38] which exceeds Max Keys (3). Split into [13, 19] and [38], and push median 24 up into root [24, 47, 68].',
-        formula: `Leaf [13, 19, 24, 38] overflows → Push up 24 → Root becomes [24, 47, 68]`,
+        title: 'Insert 19 (Sub-Step A): Temporary Insert in Leaf [13, 19, 24, 38] → OVERFLOW!',
+        codeLine: 4,
+        explanation:
+          'Search for 19 (< 47) leads to leftmost leaf [13, 24, 38]. Inserting 19 in sorted order gives [13, 19, 24, 38], which has 4 keys (> Max Keys 3) → OVERFLOW! Median key 24 will be pushed up.',
+        formula: `Leaf [13, 19, 24, 38] has 4 keys > Max Keys (3) ⇒ Overflow! Median = 24`,
         tree: {
           id: 'root',
-          keys: [24, 47, 68],
-          highlight: 'active' as const,
+          keys: [47, 68],
           children: [
-            { id: 'c1a', keys: [13, 19], highlight: 'split' as const },
-            { id: 'c1b', keys: [38], highlight: 'split' as const },
+            {
+              id: 'c1',
+              keys: [13, 19, 24, 38],
+              highlight: 'overflow',
+              activeKey: 19,
+              medianKey: 24,
+              badgeText: 'OVERFLOW (4 > 3) • Median = 24',
+            },
             { id: 'c2', keys: [59, 64] },
             { id: 'c3', keys: [71, 82, 95] },
           ],
         },
-        tableRow: ['Insert 19', '[24, 47, 68]', '[13, 19] | [38] | [59, 64] | [71, 82, 95]', 'Split leaf, push 24 up'],
+        tableRow: ['Insert 19 (Overflow)', '[47, 68]', '[13, 19, 24, 38]* | [59, 64] | [71, 82, 95]', 'Leaf Overflows (4 > 3)'],
       },
       {
-        title: 'Insert 56 → Fits Directly in Leaf [59, 64] → [56, 59, 64]',
+        title: 'Insert 19 (Sub-Step B): Split Leaf Around 24 & Push 24 Up to Root',
+        codeLine: 6,
+        explanation:
+          'Split [13, 19, 24, 38] into left leaf [13, 19] and right leaf [38], and push median 24 up into the parent root node → Root becomes [24, 47, 68] (3 keys ≤ Max 3).',
+        formula: `Split [13, 19, 24, 38] → [13, 19] & [38]; Push 24 up → Root [24, 47, 68]`,
+        tree: {
+          id: 'root',
+          keys: [24, 47, 68],
+          highlight: 'active',
+          activeKey: 24,
+          badgeText: 'Promoted 24 ↑',
+          children: [
+            { id: 'c1a', keys: [13, 19], highlight: 'split' },
+            { id: 'c1b', keys: [38], highlight: 'split' },
+            { id: 'c2', keys: [59, 64] },
+            { id: 'c3', keys: [71, 82, 95] },
+          ],
+        },
+        tableRow: ['Insert 19 (Split)', '[24, 47, 68]', '[13, 19] | [38] | [59, 64] | [71, 82, 95]', 'Split leaf, push 24 up'],
+      },
+      {
+        title: 'Insert 56: Fits Directly in Leaf [59, 64] → [56, 59, 64]',
         codeLine: 3,
-        explanation: '56 lies between 47 and 68. Target leaf [59, 64] has only 2 keys (< 3). Insert 56 in sorted order to get [56, 59, 64]. No split needed!',
+        explanation:
+          '56 lies between 47 and 68. Target leaf [59, 64] has only 2 keys (< 3). Insert 56 in sorted order to get [56, 59, 64] (3 keys ≤ Max 3). No split needed!',
         formula: `47 < 56 < 68 ⇒ Insert into leaf [56, 59, 64] (3 keys ≤ Max 3)`,
         tree: {
           id: 'root',
@@ -1028,26 +1097,77 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
           children: [
             { id: 'c1a', keys: [13, 19] },
             { id: 'c1b', keys: [38] },
-            { id: 'c2', keys: [56, 59, 64], highlight: 'found' as const },
+            { id: 'c2', keys: [56, 59, 64], highlight: 'found', activeKey: 56 },
             { id: 'c3', keys: [71, 82, 95] },
           ],
         },
         tableRow: ['Insert 56', '[24, 47, 68]', '[13, 19] | [38] | [56, 59, 64] | [71, 82, 95]', 'Direct leaf insert'],
       },
       {
-        title: 'Insert 87 → Leaf [71, 82, 95] Overflows & Root [24, 47, 68] Also Splits!',
+        title: 'Insert 87 (Sub-Step A): Temporary Insert in Leaf [71, 82, 87, 95] → OVERFLOW!',
+        codeLine: 4,
+        explanation:
+          '87 > 68 goes to rightmost leaf [71, 82, 95]. Inserting 87 gives [71, 82, 87, 95] (4 keys > Max 3) → OVERFLOW! Median 82 will be pushed up to the root.',
+        formula: `Leaf [71, 82, 87, 95] has 4 keys > Max Keys (3) ⇒ Overflow! Median = 82`,
+        tree: {
+          id: 'root',
+          keys: [24, 47, 68],
+          children: [
+            { id: 'c1a', keys: [13, 19] },
+            { id: 'c1b', keys: [38] },
+            { id: 'c2', keys: [56, 59, 64] },
+            {
+              id: 'c3',
+              keys: [71, 82, 87, 95],
+              highlight: 'overflow',
+              activeKey: 87,
+              medianKey: 82,
+              badgeText: 'OVERFLOW (4 > 3) • Median = 82',
+            },
+          ],
+        },
+        tableRow: ['Insert 87 (Leaf Overflow)', '[24, 47, 68]', '[13, 19] | [38] | [56, 59, 64] | [71, 82, 87, 95]*', 'Leaf Overflows (4 > 3)'],
+      },
+      {
+        title: 'Insert 87 (Sub-Step B): Push 82 Up → Root [24, 47, 68, 82] OVERFLOWS!',
         codeLine: 6,
-        explanation: '87 > 68 goes to [71, 82, 95] → [71, 82, 87, 95] (overflow!). Push median 82 up to root → [24, 47, 68, 82] which ALSO overflows! Root splits around 47, growing tree height by 1 level.',
-        formula: `Push 82 up → Root [24, 47, 68, 82] overflows → New Root [47] with children [24] and [68, 82]`,
+        explanation:
+          'Leaf splits into [71] and [87, 95], pushing 82 up into the root. The root now has 4 keys [24, 47, 68, 82] (> Max Keys 3) → PARENT/ROOT OVERFLOW! Percolate up by splitting the root around median 47.',
+        formula: `Root [24, 47, 68, 82] has 4 keys > Max Keys (3) ⇒ Root Overflows! Median = 47`,
+        tree: {
+          id: 'root',
+          keys: [24, 47, 68, 82],
+          highlight: 'overflow',
+          activeKey: 82,
+          medianKey: 47,
+          badgeText: 'ROOT OVERFLOW (4 > 3) • Median = 47',
+          children: [
+            { id: 'c1a', keys: [13, 19] },
+            { id: 'c1b', keys: [38] },
+            { id: 'c2', keys: [56, 59, 64] },
+            { id: 'c3a', keys: [71], highlight: 'split' },
+            { id: 'c3b', keys: [87, 95], highlight: 'split' },
+          ],
+        },
+        tableRow: ['Insert 87 (Root Overflow)', '[24, 47, 68, 82]*', '[13, 19] | [38] | [56, 59, 64] | [71] | [87, 95]', 'Root Overflows (4 > 3)'],
+      },
+      {
+        title: 'Insert 87 (Sub-Step C): Root Splits Around 47 → Tree Grows to 3 Levels!',
+        codeLine: 6,
+        explanation:
+          'Root [24, 47, 68, 82] splits around median 47: 47 becomes the new Root [47], with left internal node [24] (pointing to [13, 19] and [38]) and right internal node [68, 82] (pointing to [56, 59, 64], [71], and [87, 95]).',
+        formula: `New Root [47] → Left Internal [24] & Right Internal [68, 82] (Height grows to 3 levels)`,
         tree: {
           id: 'root',
           keys: [47],
-          highlight: 'split' as const,
+          highlight: 'active',
+          activeKey: 47,
+          badgeText: 'New Root ↑ (3 Levels)',
           children: [
             {
               id: 'l1',
               keys: [24],
-              highlight: 'split' as const,
+              highlight: 'split',
               children: [
                 { id: 'c1a', keys: [13, 19] },
                 { id: 'c1b', keys: [38] },
@@ -1056,7 +1176,7 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
             {
               id: 'r1',
               keys: [68, 82],
-              highlight: 'split' as const,
+              highlight: 'split',
               children: [
                 { id: 'c2', keys: [56, 59, 64] },
                 { id: 'c3a', keys: [71] },
@@ -1065,12 +1185,13 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
             },
           ],
         },
-        tableRow: ['Insert 87', '[47] → [24], [68, 82]', '[13, 19] | [38] | [56, 59, 64] | [71] | [87, 95]', 'Double split (Root grows)'],
+        tableRow: ['Insert 87 (Root Split)', '[47] → [24], [68, 82]', '[13, 19] | [38] | [56, 59, 64] | [71] | [87, 95]', 'Cascading Root Split (3 Levels)'],
       },
       {
-        title: 'Insert 42 → Fits Directly in Leaf [38] → [38, 42]',
+        title: 'Insert 42: Fits Directly in Leaf [38] → [38, 42]',
         codeLine: 3,
-        explanation: '42 < 47 and 42 > 24, so we follow right child of [24] to leaf [38]. Insert 42 directly to form [38, 42].',
+        explanation:
+          '42 < 47 (go left to [24]), and 42 > 24 (follow second pointer of [24] to leaf [38]). Insert 42 directly to form [38, 42].',
         formula: `24 < 42 < 47 ⇒ Leaf [38] becomes [38, 42]`,
         tree: {
           id: 'root',
@@ -1081,7 +1202,7 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
               keys: [24],
               children: [
                 { id: 'c1a', keys: [13, 19] },
-                { id: 'c1b', keys: [38, 42], highlight: 'found' as const },
+                { id: 'c1b', keys: [38, 42], highlight: 'found', activeKey: 42 },
               ],
             },
             {
@@ -1098,9 +1219,10 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
         tableRow: ['Insert 42', '[47] → [24], [68, 82]', '[13, 19] | [38, 42] | [56, 59, 64] | [71] | [87, 95]', 'Direct leaf insert'],
       },
       {
-        title: 'Insert 77 → Fits Directly in Leaf [71] → [71, 77]',
+        title: 'Insert 77: Fits Directly in Leaf [71] → [71, 77]',
         codeLine: 3,
-        explanation: '77 > 47 and 68 < 77 < 82, so we follow the middle pointer of [68, 82] to leaf [71]. Insert 77 directly to get [71, 77].',
+        explanation:
+          '77 > 47 (go right to [68, 82]), and 68 < 77 < 82 (follow middle pointer of [68, 82] to leaf [71]). Insert 77 directly to get [71, 77].',
         formula: `68 < 77 < 82 ⇒ Leaf [71] becomes [71, 77]`,
         tree: {
           id: 'root',
@@ -1119,7 +1241,7 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
               keys: [68, 82],
               children: [
                 { id: 'c2', keys: [56, 59, 64] },
-                { id: 'c3a', keys: [71, 77], highlight: 'found' as const },
+                { id: 'c3a', keys: [71, 77], highlight: 'found', activeKey: 77 },
                 { id: 'c3b', keys: [87, 95] },
               ],
             },
@@ -1159,6 +1281,7 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
               }))
             ),
           },
+          buildBoundsTable(4),
         ],
       });
     });
@@ -1167,11 +1290,19 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
 
   if (exampleKey === 'fall2020-q5') {
     // Fall 2020 Midterm Q5: B-Tree of order m=5, Delete E, R, M
-    const delSnaps = [
+    const delSnaps: {
+      title: string;
+      codeLine: number;
+      explanation: string;
+      formula: string;
+      tree: BTreeNodeView;
+      row: string[];
+    }[] = [
       {
         title: 'Initial B-Tree (Order m = 5, Min Keys = 2, Max Keys = 4)',
         codeLine: 1,
-        explanation: 'Initial B-Tree from Fall 2020 Midterm Q5 (Slide 43): Root [J], internal nodes [C, F] and [M, R], leaves [A, B], [D, E], [G, H, I], [K, L], [N, P], [S, T, U, X].',
+        explanation:
+          'Initial B-Tree from Fall 2020 Midterm Q5: Root [J], internal nodes [C, F] and [M, R], leaves [A, B], [D, E], [G, H, I], [K, L], [N, P], [S, T, U, X].',
         formula: `m = 5 ⇒ Min Keys = ⌈5/2⌉ - 1 = 2, Max Keys = 4`,
         tree: {
           id: 'root',
@@ -1200,10 +1331,11 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
         row: ['Initial Tree', '[C, F] | [M, R]', '[A,B] [D,E] [G,H,I] [K,L] [N,P] [S,T,U,X]', 'Valid m=5 B-Tree'],
       },
       {
-        title: 'Delete E (Scenario III: Leaf Has Exactly 2 Keys → Borrow from Right Sibling [G, H, I])',
-        codeLine: 8,
-        explanation: 'Deleting E from [D, E] leaves [D] with 1 key (< Min Keys 2). Right sibling [G, H, I] has 3 keys (extra key!). Move parent F down to [D, F] and move smallest sibling key G up to parent → [C, G], leaving [H, I].',
-        formula: `Delete E → Borrow from right sibling [G, H, I]: F moves down to [D, F], G moves up to [C, G]`,
+        title: 'Delete E (Scenario III: Underflow at [D] → Borrow via Parent F from Right Sibling [G, H, I])',
+        codeLine: 10,
+        explanation:
+          'Deleting E from leaf [D, E] leaves [D] with only 1 key (< Min Keys 2 → Underflow). Right sibling [G, H, I] has 3 keys (> 2). Move parent key F down into [D, F] and move smallest sibling key G up into parent → [C, G], leaving [H, I].',
+        formula: `Delete E → Borrow from right sibling [G, H, I]: Parent F ↓ to [D, F], Sibling G ↑ to [C, G]`,
         tree: {
           id: 'root',
           keys: ['J'],
@@ -1211,10 +1343,12 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
             {
               id: 'l1',
               keys: ['C', 'G'],
-              highlight: 'borrowed' as const,
+              highlight: 'borrowed',
+              activeKey: 'G',
+              badgeText: 'Borrowed G ↑',
               children: [
                 { id: 'lf1', keys: ['A', 'B'] },
-                { id: 'lf2', keys: ['D', 'F'], highlight: 'borrowed' as const },
+                { id: 'lf2', keys: ['D', 'F'], highlight: 'borrowed', activeKey: 'F', badgeText: 'Parent F ↓' },
                 { id: 'lf3', keys: ['H', 'I'] },
               ],
             },
@@ -1232,9 +1366,10 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
         row: ['Delete E', '[C, G] | [M, R]', '[A,B] [D,F] [H,I] [K,L] [N,P] [S,T,U,X]', 'Scenario III: Borrow from right sibling'],
       },
       {
-        title: 'Delete R (Scenario II: Internal Node → Replace with Successor S)',
-        codeLine: 7,
-        explanation: 'R is in internal node [M, R]. Its inorder successor in leaf [S, T, U, X] is S. Move S up to replace R → internal node becomes [M, S] and leaf becomes [T, U, X] (3 keys ≥ 2).',
+        title: 'Delete R (Scenario II: Internal Node → Replace with Inorder Successor S)',
+        codeLine: 9,
+        explanation:
+          'R is in internal node [M, R]. Its inorder successor (smallest key in the subtree to the right of R) is S in leaf [S, T, U, X]. Move S up to replace R → internal node becomes [M, S] and leaf becomes [T, U, X] (3 keys ≥ 2).',
         formula: `Delete internal key R → Replace with inorder successor S from [S, T, U, X]`,
         tree: {
           id: 'root',
@@ -1252,11 +1387,13 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
             {
               id: 'r1',
               keys: ['M', 'S'],
-              highlight: 'active' as const,
+              highlight: 'active',
+              activeKey: 'S',
+              badgeText: 'Successor S ↑',
               children: [
                 { id: 'lf4', keys: ['K', 'L'] },
                 { id: 'lf5', keys: ['N', 'P'] },
-                { id: 'lf6', keys: ['T', 'U', 'X'], highlight: 'borrowed' as const },
+                { id: 'lf6', keys: ['T', 'U', 'X'], highlight: 'borrowed' },
               ],
             },
           ],
@@ -1264,10 +1401,11 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
         row: ['Delete R', '[C, G] | [M, S]', '[A,B] [D,F] [H,I] [K,L] [N,P] [T,U,X]', 'Scenario II: Replace with successor S'],
       },
       {
-        title: 'Delete M (Replace with N, Then Borrow T from Right Sibling)',
-        codeLine: 9,
-        explanation: 'M is internal: replace with successor N from [N, P], leaving [P] with 1 key (underflow). Right sibling [T, U, X] has 3 keys, so parent S moves down to [P, S] and T moves up to parent → [N, T], leaving [U, X].',
-        formula: `Delete M → N moves up, then borrow from [T, U, X]: S moves down to [P, S], T moves up to [N, T]`,
+        title: 'Delete M (Replace with Successor N, Then Borrow T from Right Sibling)',
+        codeLine: 10,
+        explanation:
+          'M is internal: replace M with its inorder successor N from [N, P], leaving [P] with 1 key (< 2 → Underflow). Right sibling [T, U, X] has 3 keys, so parent S moves down to [P, S] and T moves up to parent → [N, T], leaving [U, X].',
+        formula: `Delete M → N moves up, then borrow from [T, U, X]: S ↓ to [P, S], T ↑ to [N, T]`,
         tree: {
           id: 'root',
           keys: ['J'],
@@ -1284,10 +1422,12 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
             {
               id: 'r1',
               keys: ['N', 'T'],
-              highlight: 'borrowed' as const,
+              highlight: 'borrowed',
+              activeKey: 'T',
+              badgeText: 'Successor N + Borrowed T ↑',
               children: [
                 { id: 'lf4', keys: ['K', 'L'] },
-                { id: 'lf5', keys: ['P', 'S'], highlight: 'borrowed' as const },
+                { id: 'lf5', keys: ['P', 'S'], highlight: 'borrowed', activeKey: 'S' },
                 { id: 'lf6', keys: ['U', 'X'] },
               ],
             },
@@ -1327,95 +1467,561 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
               }))
             ),
           },
+          buildBoundsTable(5),
         ],
       });
     });
     return steps;
   }
 
-  // Default custom key insertion into B-Tree of order m
+  if (exampleKey === 'slide-del-htre') {
+    // Lecture 07 Slides 95–108: All 4 Deletion Scenarios on the 20-letter B-Tree (Delete H, T, R, E)
+    const slideDelSnaps: {
+      title: string;
+      codeLine: number;
+      explanation: string;
+      formula: string;
+      tree: BTreeNodeView;
+      row: string[];
+    }[] = [
+      {
+        title: 'Initial 20-Letter B-Tree (Slides 71 & 95, Order m = 5, Min Keys = 2, Max Keys = 4)',
+        codeLine: 1,
+        explanation:
+          'Starting 3-level B-Tree after inserting C, N, G, A, H, E, K, Q, M, F, W, L, T, Z, D, P, R, X, Y, S: Root [M], internal nodes [D, G] and [Q, T], and 6 leaves.',
+        formula: `Order m = 5 ⇒ Min Keys = 2, Max Keys = 4`,
+        tree: {
+          id: 'root',
+          keys: ['M'],
+          children: [
+            {
+              id: 'l1',
+              keys: ['D', 'G'],
+              children: [
+                { id: 'lf1', keys: ['A', 'C'] },
+                { id: 'lf2', keys: ['E', 'F'] },
+                { id: 'lf3', keys: ['H', 'K', 'L'] },
+              ],
+            },
+            {
+              id: 'r1',
+              keys: ['Q', 'T'],
+              children: [
+                { id: 'lf4', keys: ['N', 'P'] },
+                { id: 'lf5', keys: ['R', 'S'] },
+                { id: 'lf6', keys: ['W', 'X', 'Y', 'Z'] },
+              ],
+            },
+          ],
+        },
+        row: ['Initial Tree', '[M] → [D, G] | [Q, T]', '[A,C] [E,F] [H,K,L] [N,P] [R,S] [W,X,Y,Z]', '3-Level m=5 B-Tree'],
+      },
+      {
+        title: 'Scenario I (Slides 95–97): Delete "H" from Leaf [H, K, L]',
+        codeLine: 8,
+        explanation:
+          '"H" is in leaf [H, K, L] which has 3 keys (> Min Keys 2). Simply remove "H" → leaf becomes [K, L] (2 keys ≥ Min 2).',
+        formula: `Scenario I: Leaf [H, K, L] has 3 > 2 keys ⇒ Directly remove "H" → [K, L]`,
+        tree: {
+          id: 'root',
+          keys: ['M'],
+          children: [
+            {
+              id: 'l1',
+              keys: ['D', 'G'],
+              children: [
+                { id: 'lf1', keys: ['A', 'C'] },
+                { id: 'lf2', keys: ['E', 'F'] },
+                { id: 'lf3', keys: ['K', 'L'], highlight: 'found', badgeText: 'Removed H' },
+              ],
+            },
+            {
+              id: 'r1',
+              keys: ['Q', 'T'],
+              children: [
+                { id: 'lf4', keys: ['N', 'P'] },
+                { id: 'lf5', keys: ['R', 'S'] },
+                { id: 'lf6', keys: ['W', 'X', 'Y', 'Z'] },
+              ],
+            },
+          ],
+        },
+        row: ['Delete H (Scenario I)', '[M] → [D, G] | [Q, T]', '[A,C] [E,F] [K,L] [N,P] [R,S] [W,X,Y,Z]', 'Simple leaf removal'],
+      },
+      {
+        title: 'Scenario II (Slides 98–100): Delete "T" from Internal Node [Q, T]',
+        codeLine: 9,
+        explanation:
+          '"T" is in internal node [Q, T]. Find its inorder successor (next item in ascending order), which is "W" in leaf [W, X, Y, Z]. Move "W" up to replace "T" → internal node becomes [Q, W] and leaf becomes [X, Y, Z].',
+        formula: `Scenario II: Replace internal key "T" with inorder successor "W" from [W, X, Y, Z]`,
+        tree: {
+          id: 'root',
+          keys: ['M'],
+          children: [
+            {
+              id: 'l1',
+              keys: ['D', 'G'],
+              children: [
+                { id: 'lf1', keys: ['A', 'C'] },
+                { id: 'lf2', keys: ['E', 'F'] },
+                { id: 'lf3', keys: ['K', 'L'] },
+              ],
+            },
+            {
+              id: 'r1',
+              keys: ['Q', 'W'],
+              highlight: 'active',
+              activeKey: 'W',
+              badgeText: 'Successor W ↑',
+              children: [
+                { id: 'lf4', keys: ['N', 'P'] },
+                { id: 'lf5', keys: ['R', 'S'] },
+                { id: 'lf6', keys: ['X', 'Y', 'Z'], highlight: 'borrowed' },
+              ],
+            },
+          ],
+        },
+        row: ['Delete T (Scenario II)', '[M] → [D, G] | [Q, W]', '[A,C] [E,F] [K,L] [N,P] [R,S] [X,Y,Z]', 'Replace T with successor W'],
+      },
+      {
+        title: 'Scenario III (Slides 101–103): Delete "R" from Leaf [R, S] → Borrow from Right Sibling [X, Y, Z]',
+        codeLine: 10,
+        explanation:
+          'Deleting "R" from [R, S] leaves [S] with 1 key (< Min 2). Right sibling [X, Y, Z] has 3 keys (extra key!). Borrow via common parent "W": move "W" down to form [S, W], and move smallest key "X" up from right sibling to parent → [Q, X], leaving [Y, Z].',
+        formula: `Scenario III: Parent "W" ↓ to [S, W], Right Sibling "X" ↑ to [Q, X]`,
+        tree: {
+          id: 'root',
+          keys: ['M'],
+          children: [
+            {
+              id: 'l1',
+              keys: ['D', 'G'],
+              children: [
+                { id: 'lf1', keys: ['A', 'C'] },
+                { id: 'lf2', keys: ['E', 'F'] },
+                { id: 'lf3', keys: ['K', 'L'] },
+              ],
+            },
+            {
+              id: 'r1',
+              keys: ['Q', 'X'],
+              highlight: 'borrowed',
+              activeKey: 'X',
+              badgeText: 'Borrowed X ↑',
+              children: [
+                { id: 'lf4', keys: ['N', 'P'] },
+                { id: 'lf5', keys: ['S', 'W'], highlight: 'borrowed', activeKey: 'W', badgeText: 'Parent W ↓' },
+                { id: 'lf6', keys: ['Y', 'Z'] },
+              ],
+            },
+          ],
+        },
+        row: ['Delete R (Scenario III)', '[M] → [D, G] | [Q, X]', '[A,C] [E,F] [K,L] [N,P] [S,W] [Y,Z]', 'Borrow from right sibling via W'],
+      },
+      {
+        title: 'Scenario IV Sub-Step A (Slides 104–107): Delete "E" → Combine Leaf [F] with [A, C] & Pull Down "D"',
+        codeLine: 11,
+        explanation:
+          'Deleting "E" from [E, F] leaves [F] with 1 key, and neither sibling [A, C] nor [K, L] has > 2 keys! Combine [A, C] and [F] with common parent key "D" → [A, C, D, F]. Now internal node [G] has only 1 key (< Min 2 → Parent Underflow!).',
+        formula: `Combine [A, C] + Parent "D" + [F] → [A, C, D, F]; Parent [G] now has 1 < 2 keys (Underflow!)`,
+        tree: {
+          id: 'root',
+          keys: ['M'],
+          children: [
+            {
+              id: 'l1',
+              keys: ['G'],
+              highlight: 'overflow',
+              badgeText: 'UNDERFLOW (1 < Min 2)',
+              children: [
+                { id: 'lf1', keys: ['A', 'C', 'D', 'F'], highlight: 'merged', activeKey: 'D', badgeText: 'Merged [A,C,D,F]' },
+                { id: 'lf3', keys: ['K', 'L'] },
+              ],
+            },
+            {
+              id: 'r1',
+              keys: ['Q', 'X'],
+              children: [
+                { id: 'lf4', keys: ['N', 'P'] },
+                { id: 'lf5', keys: ['S', 'W'] },
+                { id: 'lf6', keys: ['Y', 'Z'] },
+              ],
+            },
+          ],
+        },
+        row: ['Delete E (Sub-Step A)', '[M] → [G]* | [Q, X]', '[A,C,D,F] [K,L] [N,P] [S,W] [Y,Z]', 'Leaf merge causes parent underflow'],
+      },
+      {
+        title: 'Scenario IV Sub-Step B (Slide 108): Combine Internal [G] with Sibling [Q, X] & Root "M" → Tree Shrinks to 2 Levels!',
+        codeLine: 11,
+        explanation:
+          'Internal node [G] has 1 key (< 2) and sibling [Q, X] has only 2 keys (no extra key to borrow). Combine [G], Root "M", and [Q, X] into a single new Root [G, M, Q, X] with 5 leaf children! Tree height decreases by 1 level.',
+        formula: `Combine [G] + Root "M" + [Q, X] ⇒ New Root [G, M, Q, X] (2 Levels)`,
+        tree: {
+          id: 'root',
+          keys: ['G', 'M', 'Q', 'X'],
+          highlight: 'merged',
+          activeKey: 'M',
+          badgeText: 'Combined Root [G, M, Q, X]',
+          children: [
+            { id: 'lf1', keys: ['A', 'C', 'D', 'F'] },
+            { id: 'lf3', keys: ['K', 'L'] },
+            { id: 'lf4', keys: ['N', 'P'] },
+            { id: 'lf5', keys: ['S', 'W'] },
+            { id: 'lf6', keys: ['Y', 'Z'] },
+          ],
+        },
+        row: ['Delete E (Sub-Step B)', 'Root [G, M, Q, X]', '[A,C,D,F] [K,L] [N,P] [S,W] [Y,Z]', 'Internal merge with root (2 Levels)'],
+      },
+    ];
+
+    slideDelSnaps.forEach((snap, idx) => {
+      steps.push({
+        stepNumber: idx + 1,
+        codeLine: snap.codeLine,
+        title: snap.title,
+        explanation: snap.explanation,
+        formula: snap.formula,
+        variables: { Order_m: 5, MinKeys: 2, MaxKeys: 4 },
+        bTreeView: {
+          order: 5,
+          minKeys: 2,
+          maxKeys: 4,
+          root: snap.tree,
+          operationNote: snap.title,
+        },
+        tables: [
+          {
+            id: 'btree-slide-del-log',
+            title: 'Lecture 07 Slides 95–108 Deletion Scenarios I–IV Trace',
+            colHeaders: ['Operation', 'Internal Nodes', 'Leaf Nodes (Left to Right)', 'Action Taken'],
+            rows: slideDelSnaps.slice(0, idx + 1).map((s, rIdx) =>
+              s.row.map((cell, cIdx) => ({
+                value: cell,
+                state: rIdx === idx ? 'active' : 'computed',
+                editableKey: cIdx === 1 || cIdx === 2 ? `btsdel-${rIdx}-${cIdx}` : undefined,
+                expectedValue: cell,
+                mistakeExplanation: s.explanation,
+              }))
+            ),
+          },
+          buildBoundsTable(5),
+        ],
+      });
+    });
+    return steps;
+  }
+
+  // ==========================================================================
+  // GENERAL RECURSIVE MULTI-LEVEL B-TREE CREATION ENGINE (WITH PERCOLATE-UP!)
+  // ==========================================================================
+  interface SimNode {
+    id: string;
+    keys: (string | number)[];
+    children: SimNode[];
+    highlight?: 'active' | 'split' | 'merged' | 'borrowed' | 'found' | 'overflow';
+    activeKey?: string | number;
+    medianKey?: string | number;
+    badgeText?: string;
+  }
+
+  let nodeIdCounter = 1;
+  const nextId = (prefix = 'n') => `${prefix}-${nodeIdCounter++}`;
+
+  const cloneTree = (node: SimNode, clearHighlights = false): SimNode => ({
+    id: node.id,
+    keys: [...node.keys],
+    highlight: clearHighlights ? undefined : node.highlight,
+    activeKey: clearHighlights ? undefined : node.activeKey,
+    medianKey: clearHighlights ? undefined : node.medianKey,
+    badgeText: clearHighlights ? undefined : node.badgeText,
+    children: node.children.map((ch) => cloneTree(ch, clearHighlights)),
+  });
+
+  const compareKeys = (a: string | number, b: string | number): number => {
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a).localeCompare(String(b));
+  };
+
+  const countTreeLevels = (node: SimNode): number => {
+    if (node.children.length === 0) return 1;
+    return 1 + countTreeLevels(node.children[0]);
+  };
+
+  const summarizeTreeLevels = (root: SimNode): { internalSummary: string; leavesSummary: string } => {
+    const internalByLevel: string[][] = [];
+    const leaves: string[] = [];
+
+    const dfs = (n: SimNode, depth: number) => {
+      const label = `[${n.keys.join(', ')}]`;
+      if (n.children.length === 0) {
+        leaves.push(label);
+      } else {
+        if (!internalByLevel[depth]) internalByLevel[depth] = [];
+        internalByLevel[depth].push(label);
+        n.children.forEach((c) => dfs(c, depth + 1));
+      }
+    };
+    dfs(root, 0);
+
+    const internalSummary =
+      internalByLevel.length === 0
+        ? '(Root is Leaf)'
+        : internalByLevel.map((lvlNodes, idx) => `L${idx}: ${lvlNodes.join(' ')}`).join(' → ');
+
+    return {
+      internalSummary,
+      leavesSummary: leaves.join(' | '),
+    };
+  };
+
   const items = exampleKey
     .split(/[\s,]+/)
     .map((s) => s.trim())
     .filter(Boolean);
 
-  let currentLeaves: (string | number)[][] = [[]];
-  let parentKeys: (string | number)[] = [];
+  let root: SimNode = {
+    id: nextId('root'),
+    keys: [],
+    children: [],
+  };
 
-  items.forEach((item, idx) => {
-    const val = isNaN(Number(item)) ? item : Number(item);
-    // Find leaf
-    let leafIdx = 0;
-    while (leafIdx < parentKeys.length && val >= parentKeys[leafIdx]) {
-      leafIdx++;
-    }
-    currentLeaves[leafIdx].push(val);
-    currentLeaves[leafIdx].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const historyLogRows: { op: string; internal: string; leaves: string; note: string }[] = [];
 
-    let splitNote = `Inserted '${val}' into leaf #${leafIdx + 1}.`;
-    if (currentLeaves[leafIdx].length > maxKeys) {
-      const full = currentLeaves[leafIdx];
-      const mid = Math.floor(full.length / 2);
-      const promoted = full[mid];
-      const leftHalf = full.slice(0, mid);
-      const rightHalf = full.slice(mid + 1);
-      currentLeaves.splice(leafIdx, 1, leftHalf, rightHalf);
-      parentKeys.splice(leafIdx, 0, promoted);
-      splitNote = `Leaf overflowed (${full.length} > ${maxKeys} keys)! Split into [${leftHalf.join(', ')}] and [${rightHalf.join(', ')}], pushing median '${promoted}' up to parent.`;
-    }
+  const pushSnapshot = (
+    title: string,
+    codeLine: number,
+    explanation: string,
+    formula: string,
+    insertedVal: string | number,
+    opLabel: string,
+    actionShort: string
+  ) => {
+    const snapRoot = cloneTree(root, false);
+    const { internalSummary, leavesSummary } = summarizeTreeLevels(snapRoot);
+    const height = countTreeLevels(snapRoot);
+    historyLogRows.push({
+      op: opLabel,
+      internal: internalSummary,
+      leaves: leavesSummary,
+      note: actionShort,
+    });
+
+    const recentRows = historyLogRows.slice(Math.max(0, historyLogRows.length - 12));
 
     steps.push({
-      stepNumber: idx + 1,
-      codeLine: currentLeaves.length > 1 ? 5 : 3,
-      title: `Insert '${val}' (Order m = ${m})`,
-      explanation: splitNote,
-      formula: `Min Keys = ${minKeys}, Max Keys = ${maxKeys}`,
-      variables: { Inserted: val, Order_m: m, LeavesCount: currentLeaves.length },
+      stepNumber: steps.length + 1,
+      codeLine,
+      title,
+      explanation,
+      formula,
+      variables: {
+        Key: insertedVal,
+        Order_m: m,
+        MinKeys: minKeys,
+        MaxKeys: maxKeys,
+        TreeHeight: `${height} Level(s)`,
+      },
       bTreeView: {
         order: m,
         minKeys,
         maxKeys,
-        root:
-          parentKeys.length === 0
-            ? { id: 'root', keys: [...currentLeaves[0]], highlight: 'active' }
-            : {
-                id: 'root',
-                keys: [...parentKeys],
-                highlight: 'active',
-                children: currentLeaves.map((lf, lIdx) => ({
-                  id: `lf-${lIdx}`,
-                  keys: [...lf],
-                  highlight: lIdx === leafIdx ? 'found' : undefined,
-                })),
-              },
-        operationNote: splitNote,
+        root: snapRoot,
+        operationNote: explanation,
       },
       tables: [
         {
-          id: 'btree-level-bounds',
-          title: `B-Tree Level & Key Bounds Table (Order m = ${m}, ⌈m/2⌉ = ${Math.ceil(m / 2)})`,
-          subtitle: 'Matches Lecture 07 Slides 131-133 Formal Analysis',
-          colHeaders: ['Level i', 'Min Nodes at Level i', 'Min Keys at Level i', 'Formula for Min Keys'],
-          rows: [0, 1, 2, 3].map((lvl) => {
-            const c = Math.ceil(m / 2);
-            const minNodes = lvl === 0 ? 1 : 2 * Math.pow(c, lvl - 1);
-            const minK = lvl === 0 ? 1 : 2 * Math.pow(c, lvl - 1) * (c - 1);
+          id: 'btree-live-trace-log',
+          title: `Step-by-Step B-Tree Insertion & Split Log (Order m = ${m}, Max Keys = ${maxKeys})`,
+          subtitle: 'Shows every insertion, overflow detection, and upward median promotion',
+          colHeaders: ['Step / Key', 'Internal Index Nodes', 'Leaf Nodes (Left → Right)', 'Action / Split'],
+          rows: recentRows.map((r, rIdx) => {
+            const isLast = rIdx === recentRows.length - 1;
             return [
-              { value: `Level ${lvl}${lvl === 0 ? ' (Root)' : ''}` },
-              { value: minNodes, state: 'computed' },
+              { value: r.op, state: isLast ? ('active' as const) : ('computed' as const) },
+              { value: r.internal, state: isLast ? ('active' as const) : ('computed' as const) },
               {
-                value: minK,
-                state: 'match',
-                editableKey: `bt-bound-${lvl}`,
-                expectedValue: minK,
-                mistakeExplanation: `At level ${lvl}, minimum nodes = ${minNodes} and each non-root node has at least ⌈${m}/2⌉ - 1 = ${c - 1} keys.`,
+                value: r.leaves,
+                state: isLast ? ('match' as const) : ('computed' as const),
+                editableKey: isLast ? `bt-custom-leaves-${steps.length}` : undefined,
+                expectedValue: r.leaves,
+                mistakeExplanation: explanation,
               },
-              { value: lvl === 0 ? '1' : `2 · ⌈m/2⌉^(${lvl - 1}) · (⌈m/2⌉ - 1) = ${minK}` },
+              { value: r.note, state: isLast ? ('compare' as const) : ('default' as const) },
             ];
           }),
         },
+        buildBoundsTable(m),
       ],
     });
+  };
+
+  items.forEach((item, keyIdx) => {
+    const val: string | number = isNaN(Number(item)) ? item : Number(item);
+    root = cloneTree(root, true);
+
+    // 1. Find path from root down to target leaf
+    // Rule from Slide 6: All keys in subtree T_1 are >= k_1
+    const path: { node: SimNode; childIndex: number }[] = [];
+    let curr = root;
+    while (curr.children.length > 0) {
+      let cIdx = 0;
+      while (cIdx < curr.keys.length && compareKeys(val, curr.keys[cIdx]) >= 0) {
+        cIdx++;
+      }
+      path.push({ node: curr, childIndex: cIdx });
+      curr = curr.children[cIdx];
+    }
+
+    // Insert key into target leaf in sorted order
+    curr.keys.push(val);
+    curr.keys.sort(compareKeys);
+
+    if (curr.keys.length <= maxKeys) {
+      // Fits without overflow!
+      curr.highlight = 'found';
+      curr.activeKey = val;
+      curr.badgeText = `Inserted '${val}'`;
+      pushSnapshot(
+        `Key #${keyIdx + 1}: Insert '${val}' — Fits Directly in Leaf [${curr.keys.join(', ')}]`,
+        3,
+        `Search down from the root leads to leaf [${curr.keys.join(', ')}]. Since the leaf now has ${curr.keys.length} key(s) ≤ Max Keys (${maxKeys}), '${val}' is inserted in sorted order with no split required.`,
+        `Leaf Keys = ${curr.keys.length} ≤ Max Keys (${maxKeys}) ⇒ Direct Insert`,
+        val,
+        `#${keyIdx + 1}: Insert ${val}`,
+        `Direct leaf insert (${curr.keys.length}/${maxKeys} keys)`
+      );
+      return;
+    }
+
+    // 2. OVERFLOW occurred at leaf `curr`!
+    // Sub-step A: Show temporary overflow in leaf before splitting
+    const leafMidIdx = Math.floor((curr.keys.length - 1) / 2);
+    const leafMedianKey = curr.keys[leafMidIdx];
+    curr.highlight = 'overflow';
+    curr.activeKey = val;
+    curr.medianKey = leafMedianKey;
+    curr.badgeText = `OVERFLOW (${curr.keys.length} > ${maxKeys}) • Median '${leafMedianKey}'`;
+
+    pushSnapshot(
+      `Key #${keyIdx + 1} (Sub-Step A): Insert '${val}' → Leaf [${curr.keys.join(', ')}] OVERFLOWS!`,
+      4,
+      `Inserting '${val}' into target leaf produces [${curr.keys.join(', ')}], which has ${curr.keys.length} keys > Max Keys (${maxKeys})! This triggers a node split around the median key '${leafMedianKey}'.`,
+      `Overflow: ${curr.keys.length} keys > Max Keys (${maxKeys}) ⇒ Split at Median '${leafMedianKey}'`,
+      val,
+      `#${keyIdx + 1}a: ${val} (Overflow)`,
+      `Leaf [${curr.keys.join(',')}] overflows! Median = ${leafMedianKey}`
+    );
+
+    // 3. Percolate up recursively from `curr` up through `path`
+    let overflowingNode: SimNode | null = curr;
+    let levelStepCharCode = 66; // 'B', 'C', 'D'...
+
+    while (overflowingNode && overflowingNode.keys.length > maxKeys) {
+      const subStepLetter = String.fromCharCode(levelStepCharCode++);
+      root = cloneTree(root, true);
+
+      // Re-locate the current overflowing node inside the freshly cloned `root`
+      let targetInRoot = root;
+      for (let p = 0; p < path.length; p++) {
+        targetInRoot = targetInRoot.children[path[p].childIndex];
+      }
+
+      const fullKeys = [...targetInRoot.keys];
+      const fullChildren = [...targetInRoot.children];
+      const midIdx = Math.floor((fullKeys.length - 1) / 2);
+      const promotedKey = fullKeys[midIdx];
+      const leftKeys = fullKeys.slice(0, midIdx);
+      const rightKeys = fullKeys.slice(midIdx + 1);
+
+      const leftNode: SimNode = {
+        id: nextId('L'),
+        keys: leftKeys,
+        children: fullChildren.length > 0 ? fullChildren.slice(0, midIdx + 1) : [],
+        highlight: 'split',
+        badgeText: `Left Split [${leftKeys.join(', ')}]`,
+      };
+      const rightNode: SimNode = {
+        id: nextId('R'),
+        keys: rightKeys,
+        children: fullChildren.length > 0 ? fullChildren.slice(midIdx + 1) : [],
+        highlight: 'split',
+        badgeText: `Right Split [${rightKeys.join(', ')}]`,
+      };
+
+      if (path.length === 0) {
+        // Splitting the ROOT itself! Tree grows 1 level taller!
+        root = {
+          id: nextId('root'),
+          keys: [promotedKey],
+          children: [leftNode, rightNode],
+          highlight: 'active',
+          activeKey: promotedKey,
+          badgeText: `New Root '${promotedKey}' ↑ (Height +1)`,
+        };
+
+        const newHeight = countTreeLevels(root);
+        pushSnapshot(
+          `Key #${keyIdx + 1} (Sub-Step ${subStepLetter}): Split [${fullKeys.join(', ')}] & Promote '${promotedKey}' to New Root (${newHeight} Levels)`,
+          6,
+          `Node [${fullKeys.join(', ')}] splits into [${leftKeys.join(', ')}] and [${rightKeys.join(', ')}]. Median key '${promotedKey}' is pushed up to form a new Root [${promotedKey}], increasing the B-Tree height to ${newHeight} levels!`,
+          `Split [${fullKeys.join(', ')}] → [${leftKeys.join(', ')}] & [${rightKeys.join(', ')}]; New Root = [${promotedKey}]`,
+          val,
+          `#${keyIdx + 1}${subStepLetter.toLowerCase()}: Promote ${promotedKey}`,
+          `New Root [${promotedKey}] created (${newHeight} Levels)`
+        );
+        overflowingNode = null;
+      } else {
+        // Pop parent from path and insert `promotedKey` + replace child with `leftNode, rightNode`
+        const parentEntry = path.pop()!;
+        // Find parent in cloned `root`
+        let parentNode = root;
+        for (let p = 0; p < path.length; p++) {
+          parentNode = parentNode.children[path[p].childIndex];
+        }
+
+        const cIdx = parentEntry.childIndex;
+        parentNode.keys.splice(cIdx, 0, promotedKey);
+        parentNode.children.splice(cIdx, 1, leftNode, rightNode);
+
+        if (parentNode.keys.length <= maxKeys) {
+          parentNode.highlight = 'active';
+          parentNode.activeKey = promotedKey;
+          parentNode.badgeText = `Promoted '${promotedKey}' ↑`;
+
+          pushSnapshot(
+            `Key #${keyIdx + 1} (Sub-Step ${subStepLetter}): Split [${fullKeys.join(', ')}] & Push Median '${promotedKey}' Up to Parent [${parentNode.keys.join(', ')}]`,
+            6,
+            `Node [${fullKeys.join(', ')}] splits into [${leftKeys.join(', ')}] and [${rightKeys.join(', ')}]. Median '${promotedKey}' is pushed up into parent [${parentNode.keys.join(', ')}] (${parentNode.keys.length} ≤ ${maxKeys} keys).`,
+            `Promote '${promotedKey}' ↑ → Parent becomes [${parentNode.keys.join(', ')}] (${parentNode.keys.length}/${maxKeys} keys)`,
+            val,
+            `#${keyIdx + 1}${subStepLetter.toLowerCase()}: Push ${promotedKey} ↑`,
+            `Split leaf, push '${promotedKey}' to [${parentNode.keys.join(',')}]`
+          );
+          overflowingNode = null;
+        } else {
+          // Parent ITSELF now overflows! Show the parent overflow sub-step before continuing loop!
+          const parentMidIdx = Math.floor((parentNode.keys.length - 1) / 2);
+          const parentMedian = parentNode.keys[parentMidIdx];
+          parentNode.highlight = 'overflow';
+          parentNode.activeKey = promotedKey;
+          parentNode.medianKey = parentMedian;
+          parentNode.badgeText = `PARENT OVERFLOW (${parentNode.keys.length} > ${maxKeys}) • Median '${parentMedian}'`;
+
+          pushSnapshot(
+            `Key #${keyIdx + 1} (Sub-Step ${subStepLetter}): Push '${promotedKey}' Up → Parent [${parentNode.keys.join(', ')}] OVERFLOWS!`,
+            6,
+            `Pushing median '${promotedKey}' up into the parent node gives [${parentNode.keys.join(', ')}], which now has ${parentNode.keys.length} keys > Max Keys (${maxKeys})! The split must percolate up by splitting this parent around median '${parentMedian}'.`,
+            `Parent [${parentNode.keys.join(', ')}] has ${parentNode.keys.length} > ${maxKeys} keys ⇒ Percolate Up! Median = '${parentMedian}'`,
+            val,
+            `#${keyIdx + 1}${subStepLetter.toLowerCase()}: Parent Overflow`,
+            `Parent [${parentNode.keys.join(',')}] overflows! Median = ${parentMedian}`
+          );
+
+          overflowingNode = parentNode;
+        }
+      }
+    }
   });
 
   return steps;

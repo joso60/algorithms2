@@ -943,6 +943,42 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'bt-slide-create',
+        name: 'Slides 34–71 Creation Ex. 1 (All 20 Letters: C, N, G, A..S, m = 5)',
+        badge: 'Slide Example',
+        description:
+          'Complete 20-letter B-Tree creation from Slides 34–71 (C N G A H E K Q M F W L T Z D P R X Y S), culminating in the cascading root split on S!',
+        inputSummary: 'Insert C, N, G, A, H, E, K, Q, M, F, W, L, T, Z, D, P, R, X, Y, S (m = 5)',
+        customInputDefaults: {
+          keys: 'C, N, G, A, H, E, K, Q, M, F, W, L, T, Z, D, P, R, X, Y, S',
+          order: '5',
+        },
+      },
+      {
+        id: 'bt-slide-create-2',
+        name: 'Slides 72–83 Creation Ex. 2 (17 Numbers: 78, 21, 14..30, 21, m = 5)',
+        badge: 'Slide Example',
+        description:
+          'Complete 17-key numeric creation from Slides 72–83 (78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21), showing every overflow and the final 3-level split on 42!',
+        inputSummary: 'Insert 78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21 (m = 5)',
+        customInputDefaults: {
+          keys: '78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21',
+          order: '5',
+        },
+      },
+      {
+        id: 'bt-exam-2023',
+        name: 'Winter 2023 MidTerm Q3: Create B-Tree (m = 5) with 20 Keys (19, 25..3)',
+        badge: 'Past Exam',
+        description:
+          'Exact 20-point B-Tree creation question from Winter 2023 Midterm Q3, including the cascading root split on [6 | 12 | 16 | 19 | 24] → Root [16]!',
+        inputSummary: 'Insert 19, 25, 24, 18, 16, 4, 26, 20, 12, 23, 6, 13, 17, 11, 5, 8, 1, 7, 14, 3 (m = 5)',
+        customInputDefaults: {
+          keys: '19, 25, 24, 18, 16, 4, 26, 20, 12, 23, 6, 13, 17, 11, 5, 8, 1, 7, 14, 3',
+          order: '5',
+        },
+      },
+      {
         id: 'bt-exam-2025',
         name: 'Fall 2025 MidTerm Q8: Insert 19, 56, 87, 42, 77 (m = 4)',
         badge: 'Past Exam',
@@ -959,23 +995,12 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         customInputDefaults: { keys: 'fall2020-q5', order: '5' },
       },
       {
-        id: 'bt-exam-2023',
-        name: 'Winter 2023 MidTerm Q3: Create B-Tree (m = 5) with 20 Keys',
-        badge: 'Past Exam',
-        description: 'Exact 20-point B-Tree creation question from Winter 2023 Midterm Q3.',
-        inputSummary: 'Insert 19, 25, 24, 18, 16, 4, 26, 20, 12, 23, 6, 13, 17, 11, 5, 8, 1, 7, 14, 3 (m = 5)',
-        customInputDefaults: {
-          keys: '19, 25, 24, 18, 16, 4, 26, 20, 12, 23, 6, 13, 17, 11, 5, 8, 1, 7, 14, 3',
-          order: '5',
-        },
-      },
-      {
-        id: 'bt-slide-create',
-        name: 'Slide 34 Creation Example (C, N, G, A, H, E, K, Q, M, F, m = 5)',
+        id: 'bt-slide-del-1',
+        name: 'Slides 95–108 Deletion Scenarios I–IV: Delete H, T, R, E (m = 5)',
         badge: 'Slide Example',
-        description: 'Creating an order-5 B-Tree from scratch by repeated insertion (Lecture 07 Slide 34).',
-        inputSummary: 'Insert C, N, G, A, H, E, K, Q, M, F (m = 5)',
-        customInputDefaults: { keys: 'C, N, G, A, H, E, K, Q, M, F', order: '5' },
+        description: 'All 4 deletion scenarios from Lecture 07 Slides 95–108 on the 20-letter B-Tree (Delete H, Delete T, Delete R, Delete E).',
+        inputSummary: '20-Letter B-Tree (m=5) → Delete H, Delete T, Delete R, Delete E',
+        customInputDefaults: { keys: 'slide-del-htre', order: '5' },
       },
     ],
     customFields: [
