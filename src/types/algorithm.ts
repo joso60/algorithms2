@@ -7,6 +7,7 @@ export type ModuleCategory =
 
 export type AlgorithmId =
   | 'comparison-counting-sort'
+  | 'distribution-counting-sort-v1'
   | 'distribution-counting-sort'
   | 'brute-force-sm'
   | 'horspool'
@@ -24,6 +25,17 @@ export type AlgorithmId =
   | 'obst'
   | 'warshall'
   | 'floyd';
+
+export type SyllabusStatus = 'required' | 'partial-exclusion' | 'excluded';
+
+export interface SyllabusExclusionInfo {
+  status: SyllabusStatus;
+  badgeLabel?: string; // e.g., "EXCLUDED" or "SLIDES 95-128 EXCLUDED"
+  excludedSlides?: string;
+  requiredScope?: string;
+  reason?: string;
+  affectedExams?: string[];
+}
 
 export type CellState = 'default' | 'active' | 'compare' | 'match' | 'mismatch' | 'path' | 'computed' | 'unvisited';
 
@@ -172,6 +184,7 @@ export interface AlgorithmMeta {
   indexingRule: string;
   midtermCount?: number;
   midtermPapers?: string[];
+  syllabusInfo?: SyllabusExclusionInfo;
   summary: string;
   pseudocodeTitle: string;
   pseudocodeLines: string[];

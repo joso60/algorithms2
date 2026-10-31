@@ -161,18 +161,149 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
   },
 
   // ==========================================================================
-  // 2. DISTRIBUTION COUNTING SORT
+  // 2A. DISTRIBUTION COUNTING SORT — VERSION 1 (CLRS / Slides 23–26 & Winter 2023 Q1)
+  // ==========================================================================
+  {
+    id: 'distribution-counting-sort-v1',
+    title: 'Distribution Counting Sort — Version 1 (CLRS)',
+    shortTitle: 'Distribution Counting (Ver. 1)',
+    lectureFile: '02-CPCS 324 - CountingSort.pptx (Slides 23–26) & Winter 2023 Q1',
+    category: 'input-enhancement',
+    categoryLabel: 'Module 1: Input Enhancement',
+    indexingRule: '1-based A[1..n] & B[1..n], 0-based C[0..k] (from 0 to max key k)',
+    summary:
+      '1st Variant of Distribution Counting Sort (CLRS textbook p. 195, Slides 23–26). Uses 1-based arrays A[1..n] and B[1..n] with a 0-based counter array C[0..k] indexed from 0 up to max key k, placing elements directly at B[C[A[j]]] without subtracting 1.',
+    pseudocodeTitle: 'Algorithm: Counting-Sort-V1(A[1..n], B[1..n], k)',
+    pseudocodeLines: [
+      '// 1st Variant (CLRS p. 195 — Lecture 02 Slide 24)',
+      'let C[0..k] be a new array',
+      'for i ← 0 to k do',
+      '    C[i] ← 0',
+      'for j ← 1 to A.length do',
+      '    C[A[j]] ← C[A[j]] + 1',
+      '// C[i] now contains the number of elements equal to i.',
+      'for i ← 1 to k do',
+      '    C[i] ← C[i] + C[i - 1]',
+      '// C[i] now contains the number of elements less than or equal to i.',
+      'for j ← A.length downto 1 do',
+      '    B[C[A[j]]] ← A[j]',
+      '    C[A[j]] ← C[A[j]] - 1',
+    ],
+    examples: [
+      {
+        id: 'dcs-v1-exam-2023',
+        name: 'Winter 2023 MidTerm Q1 & Slide 26 (7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5)',
+        badge: 'Past Exam',
+        description:
+          'Exact 10-point tracing question from Winter 2023 Midterm Q1 & Lecture 02 Slide 26 using A[1..15], C[0..9], and B[1..15]!',
+        inputSummary: 'A[1..15] = [7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5], k = 9',
+        customInputDefaults: { array: '7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5' },
+      },
+      {
+        id: 'dcs-v1-slide-25',
+        name: 'Slide 25 CLRS Textbook Example (2, 5, 3, 0, 2, 3, 0, 3)',
+        badge: 'Slide Example',
+        description:
+          'Exact 8-element walkthrough from Lecture 02 Slide 25 with A[1..8], C[0..5], and B[1..8].',
+        inputSummary: 'A[1..8] = [2, 5, 3, 0, 2, 3, 0, 3], k = 5',
+        customInputDefaults: { array: '2, 5, 3, 0, 2, 3, 0, 3' },
+      },
+      {
+        id: 'dcs-v1-sparse',
+        name: 'Sparse Range Comparison (8, 2, 8, 4, 2, 5) — Shows C[0..8] vs Version 2',
+        badge: 'Edge Case',
+        description:
+          'Shows how Version 1 allocates C[0..8] starting from 0 (including unused keys 0, 1, 3, 6, 7), whereas Version 2 only allocates D[0..u-l]!',
+        inputSummary: 'A[1..6] = [8, 2, 8, 4, 2, 5], k = 8',
+        customInputDefaults: { array: '8, 2, 8, 4, 2, 5' },
+      },
+    ],
+    customFields: [
+      {
+        key: 'array',
+        label: 'Input Array A[1..n] (non-negative integers 0..k)',
+        placeholder: '2, 5, 3, 0, 2, 3, 0, 3',
+        helpText: 'Enter comma-separated non-negative integers (0..25). Version 1 allocates C[0..k] where k = max(A).',
+      },
+    ],
+    designParadigmName: 'Input Enhancement (1st Variant: 1-Based A/B with C[0..k] Cumulative Array)',
+    designSteps: [
+      {
+        stepNumber: 1,
+        title: 'How Version 1 (CLRS) Differs from Version 2 (Levitin)',
+        subtitle: 'Lecture 02 Slides 23–26 vs. Slides 27–33',
+        content: [
+          '1. Indexing of Input/Output: Version 1 uses 1-based arrays A[1..n] and B[1..n], so the placement statement is simply B[C[A[j]]] ← A[j] (without subtracting 1). Version 2 uses 0-based A[0..n-1] and S[0..n-1], requiring S[D[j] - 1] ← A[i].',
+          '2. Indexing of Counter Array: Version 1 allocates C[0..k] starting at 0 up to the maximum value k (even if the minimum element is > 0). Version 2 shifts keys by the minimum value l (j = A[i] - l) so D[0..u-l] only allocates size (u - l + 1).',
+        ],
+        formulaBox: 'Version 1: B[C[A[j]]] ← A[j]  (1-based B, C[0..k])   |   Version 2: S[D[A[i]-l] - 1] ← A[i]  (0-based S, D[0..u-l])',
+      },
+      {
+        stepNumber: 2,
+        title: 'Cumulative Counts & Right-to-Left Stability',
+        subtitle: 'Lecture 02 Slide 24–25',
+        content: [
+          'After the second loop, C[i] holds the frequency of key i.',
+          'After the third loop (`C[i] = C[i] + C[i-1]`), C[i] holds the total number of elements ≤ i, which equals the exact 1-based index in B[1..n] where the last occurrence of key i belongs.',
+          'Looping j from A.length downto 1 places duplicate keys from right to left and decrements C[A[j]], guaranteeing a stable sort.',
+        ],
+      },
+    ],
+    designChallenge: {
+      scenarioTitle: 'Exam Check: Version 1 (C[0..k], B[1..n]) vs. Version 2 (D[0..u-l], S[0..n-1])',
+      problemStatement:
+        'Suppose the input array is A = [13, 11, 12, 13, 12, 12] where min l = 11 and max u = k = 13.',
+      questions: [
+        {
+          prompt: 'How many cells are allocated in the auxiliary count array in Version 1 (C[0..k]) vs. Version 2 (D[0..u-l])?',
+          options: [
+            'Version 1 allocates 14 cells (C[0..13]), whereas Version 2 allocates only 3 cells (D[0..2] for 11, 12, 13)',
+            'Both allocate 3 cells',
+            'Version 1 allocates 3 cells and Version 2 allocates 14 cells',
+          ],
+          correctIndex: 0,
+          explanation:
+            'Version 1 always indexes C from 0 to k = 13 (14 cells, leaving C[0..10] unused), whereas Version 2 shifts by l = 11 (`j = A[i] - l`) to use only u - l + 1 = 3 cells!',
+        },
+      ],
+    },
+    analysis: {
+      bestTime: 'Θ(n + k)',
+      avgTime: 'Θ(n + k)',
+      worstTime: 'Θ(n + k)',
+      extraSpace: 'Θ(n + k) [Array B[1..n] + Counter C[0..k]]',
+      tradeOffSummary:
+        'Uses auxiliary space C[0..k] and B[1..n] to sort n integers in [0..k] in linear Θ(n + k) time without any element-to-element comparisons.',
+      basicOperation: 'Array indexing and increment/decrement across the 4 non-nested loops',
+      inputSizeParam: 'n (length of array A), k (maximum key value in A)',
+      summationSteps: [
+        {
+          label: '1. Sum the four sequential for-loops (Slide 24)',
+          math: 'T(n, k) = ∑_{i=0}^{k} 1 + ∑_{j=1}^{n} 1 + ∑_{i=1}^{k} 1 + ∑_{j=1}^{n} 1',
+          note: 'Init loop (k+1) + Frequency loop (n) + Cumulative loop (k) + Placement loop (n).',
+        },
+        {
+          label: '2. Evaluate total operations',
+          math: '= (k + 1) + n + k + n = 2n + 2k + 1 ∈ Θ(n + k)',
+          note: 'When k = O(n), running time is linear Θ(n).',
+        },
+      ],
+    },
+  },
+
+  // ==========================================================================
+  // 2B. DISTRIBUTION COUNTING SORT — VERSION 2 (Levitin / Slides 27–33 & Fall 2025 Q1)
   // ==========================================================================
   {
     id: 'distribution-counting-sort',
-    title: 'Distribution Counting Sort',
-    shortTitle: 'Distribution Counting Sort',
-    lectureFile: '02-CPCS 324 - CountingSort.pptx & Fall 2025 MidTerm Q1',
+    title: 'Distribution Counting Sort — Version 2 (Levitin)',
+    shortTitle: 'Distribution Counting (Ver. 2)',
+    lectureFile: '02-CPCS 324 - CountingSort.pptx (Slides 27–33) & Fall 2025 MidTerm Q1',
     category: 'input-enhancement',
     categoryLabel: 'Module 1: Input Enhancement',
     indexingRule: '0-based: A[0..n-1], D[0..u-l], S[0..n-1] (Right-to-Left placement)',
     summary:
-      'Sorts elements drawn from a known small range [l..u] in linear Θ(n) time by precomputing Frequency counts and cumulative Distribution values D[0..u-l], then placing elements from right-to-left (i = n-1 down to 0).',
+      '2nd Variant of Distribution Counting Sort (Levitin textbook, Slides 27–33). Sorts elements from a bounded range [l..u] in linear Θ(n) time using 0-based arrays A[0..n-1], S[0..n-1], and range-shifted D[0..u-l], placing elements at S[D[j] - 1].',
     pseudocodeTitle: 'Algorithm: DistributionCountingSort(A[0..n-1], l, u)',
     pseudocodeLines: [
       '// Sorts array of integers/chars from limited range [l..u]',
@@ -756,6 +887,13 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
     category: 'pre-structuring',
     categoryLabel: 'Module 2: Pre-Structuring',
     indexingRule: '0-based Hash Table[0..m-1], H₁(x) = x mod m, Load Factor α = n / m',
+    syllabusInfo: {
+      status: 'partial-exclusion',
+      badgeLabel: 'SLIDES 3–14 EXCLUDED',
+      excludedSlides: 'Slides 3 to 14 (Dictionary ADT Theoretical Intro & Array/BST Dictionary Comparison)',
+      requiredScope: 'Starts from Slide 15 to End (Hash Tables, Hash Functions, Open Hashing & Closed Hashing)',
+      reason: 'Crossed out in red in the official syllabus: Dictionary ADT theoretical section is excluded.',
+    },
     summary:
       'Implements dictionaries in O(1) average time using Pre-Structuring. Compares Closed Hashing (Linear Probing, Quadratic Probing, Double Hashing) and Open Hashing (Separate Chaining), plus Lazy Deletion.',
     pseudocodeTitle: 'Algorithm: HashTableInsertAndSearch(K, m)',
@@ -925,8 +1063,19 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
     category: 'pre-structuring',
     categoryLabel: 'Module 2: Pre-Structuring',
     indexingRule: 'Order m: Children ∈ [⌈m/2⌉ .. m], Keys ∈ [⌈m/2⌉ - 1 .. m - 1] (Root ≥ 1 key)',
+    syllabusInfo: {
+      status: 'partial-exclusion',
+      badgeLabel: 'DELETION EXCLUDED (95–128)',
+      excludedSlides: 'Slides 95 to 128 (B-Tree Deletion Scenarios I–IV, Balanced B-Trees, Balancing & Combining)',
+      requiredScope: 'Slides 1 to 94 ONLY (B-Tree Structural Bounds, Search, Construction, and Insertion)',
+      reason: 'Excluded per Instructor Blacklist & Syllabus: B-Tree Deletion and Balancing/Combining are removed.',
+      affectedExams: [
+        'Fall 2020 Midterm Q5 (Delete key M — EXCLUDED)',
+        'Spring 2021 Midterm Q5 (Delete keys 2, 8, 22 — EXCLUDED)',
+      ],
+    },
     summary:
-      'Multiway balanced search tree designed for magnetic disks using Pre-Structuring. Covers structural bounds (order m), bottom-up node splitting on overflow, and the 4 exam deletion scenarios (borrowing & merging).',
+      'Multiway balanced search tree designed for magnetic disks using Pre-Structuring. Required Scope (Slides 1–94): Structural bounds (order m), Search, Creation, and bottom-up Node Splitting on Insertion. (Note: Slides 95–128 on B-Tree Deletion are EXCLUDED from the syllabus).',
     pseudocodeTitle: 'Algorithm: BTreeInsertAndDelete(T, K, m)',
     pseudocodeLines: [
       '// Insertion in B-Tree of order m (Max keys = m - 1):',
@@ -988,18 +1137,20 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
       },
       {
         id: 'bt-exam-2020',
-        name: 'Fall 2020 MidTerm Q5: Delete E, R, M (m = 5)',
+        name: '🚫 [EXCLUDED TOPIC: Deletion] Fall 2020 MidTerm Q5: Delete E, R, M (m = 5)',
         badge: 'Past Exam',
-        description: 'Exact B-Tree deletion trace from Fall 2020 Midterm Q5 (Borrowing & Internal Successor).',
-        inputSummary: 'Initial Tree (m=5) + Delete E, Delete R, Delete M',
+        description:
+          '⚠️ EXCLUDED FROM SYLLABUS (Slides 95–128): B-Tree Deletion is removed per instructor blacklist. Kept here for reference only.',
+        inputSummary: '[EXCLUDED] Initial Tree (m=5) + Delete E, Delete R, Delete M',
         customInputDefaults: { keys: 'fall2020-q5', order: '5' },
       },
       {
         id: 'bt-slide-del-1',
-        name: 'Slides 95–108 Deletion Scenarios I–IV: Delete H, T, R, E (m = 5)',
+        name: '🚫 [EXCLUDED TOPIC: Deletion] Slides 95–108 Scenarios I–IV: Delete H, T, R, E (m = 5)',
         badge: 'Slide Example',
-        description: 'All 4 deletion scenarios from Lecture 07 Slides 95–108 on the 20-letter B-Tree (Delete H, Delete T, Delete R, Delete E).',
-        inputSummary: '20-Letter B-Tree (m=5) → Delete H, Delete T, Delete R, Delete E',
+        description:
+          '⚠️ EXCLUDED FROM SYLLABUS (Slides 95–128): B-Tree Deletion Scenarios I–IV are removed per instructor blacklist.',
+        inputSummary: '[EXCLUDED] 20-Letter B-Tree (m=5) → Delete H, Delete T, Delete R, Delete E',
         customInputDefaults: { keys: 'slide-del-htre', order: '5' },
       },
     ],

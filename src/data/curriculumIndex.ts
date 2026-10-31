@@ -3,6 +3,7 @@ import { ALGORITHMS_PART1 } from './curriculumPart1';
 import { ALGORITHMS_PART2 } from './curriculumPart2';
 import {
   generateComparisonCountingSteps,
+  generateDistributionCountingV1Steps,
   generateDistributionCountingSteps,
   generateBruteForceSMSteps,
   generateHorspoolSteps,
@@ -32,9 +33,13 @@ export const MIDTERM_EXAM_FREQUENCY: Record<
     count: 1,
     papers: ['Winter 2023 MidTerm Q1'],
   },
+  'distribution-counting-sort-v1': {
+    count: 1,
+    papers: ['Winter 2023 MidTerm Q1 (1st Variant: A[1..15], C[0..9], B[1..15])'],
+  },
   'distribution-counting-sort': {
-    count: 3,
-    papers: ['Spring 2021 MidTerm Q1', 'Winter 2023 MidTerm Q1', 'Fall 2025 MidTerm Q1'],
+    count: 2,
+    papers: ['Spring 2021 MidTerm Q1', 'Fall 2025 MidTerm Q1'],
   },
   'brute-force-sm': {
     count: 1,
@@ -122,6 +127,10 @@ export function generateTraceForAlgorithm(
   switch (id) {
     case 'comparison-counting-sort':
       return generateComparisonCountingSteps(inputs.array || '62, 31, 84, 96, 19, 47');
+    case 'distribution-counting-sort-v1':
+      return generateDistributionCountingV1Steps(
+        inputs.array || '7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5'
+      );
     case 'distribution-counting-sort':
       return generateDistributionCountingSteps(inputs.array || 'b, c, d, c, b, a, a, b');
     case 'brute-force-sm':
@@ -374,6 +383,23 @@ export function generateRandomExamInputForAlgorithm(id: AlgorithmId): {
       return {
         inputs: { array: arr.join(', ') },
         summaryLabel: `Random Exam Array (n = 6): [${arr.join(', ')}]`,
+      };
+    }
+
+    case 'distribution-counting-sort-v1': {
+      const maxK = randInt(5, 9);
+      const n = randInt(8, 10);
+      const arr: number[] = [maxK, randInt(1, maxK - 1), randInt(1, maxK - 1)];
+      while (arr.length < n) {
+        arr.push(randInt(0, maxK));
+      }
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = randInt(0, i);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return {
+        inputs: { array: arr.join(', ') },
+        summaryLabel: `Random Exam V1 Array (A[1..${n}], C[0..${maxK}], B[1..${n}]): [${arr.join(', ')}]`,
       };
     }
 

@@ -149,6 +149,243 @@ export function generateComparisonCountingSteps(inputStr: string): TraceStep[] {
 }
 
 // ============================================================================
+// 1B. DISTRIBUTION COUNTING SORT (1st Variant - CLRS & Winter 2023 MidTerm Q1)
+//     Uses 1-based A[1..n] & B[1..n], and 0-based C[0..k] (from 0 to max key k)
+// ============================================================================
+export function generateDistributionCountingV1Steps(inputStr: string): TraceStep[] {
+  const raw = inputStr
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (raw.length === 0) return [];
+  const nums = raw.map((x) => {
+    const parsed = Number(x);
+    return isNaN(parsed) ? Math.max(0, x.toLowerCase().charCodeAt(0) - 97) : Math.max(0, Math.floor(parsed));
+  });
+
+  const n = nums.length;
+  const maxKey = Math.min(25, Math.max(...nums, 0));
+  const k = maxKey;
+
+  const initC = new Array<number>(k + 1).fill(0);
+  const freqC = new Array<number>(k + 1).fill(0);
+  const cumC = new Array<number>(k + 1).fill(0);
+  const workC = new Array<number>(k + 1).fill(0);
+  const B = new Array<string | number>(n).fill('');
+
+  const placementHistory: {
+    j: number; // 1-based index in A
+    aVal: number;
+    bIdx: number; // 1-based index in B
+    cSnap: number[];
+    bSnap: (string | number)[];
+  }[] = [];
+
+  const steps: TraceStep[] = [];
+
+  const buildTables = (
+    phase: 'init' | 'freq' | 'cum' | 'place',
+    activeJ1Based?: number,
+    activeCIdx?: number,
+    activeB1Based?: number
+  ): VisualTable[] => {
+    const oneBasedHeaders = Array.from({ length: n }, (_, idx) => idx + 1);
+    const cHeaders = Array.from({ length: k + 1 }, (_, idx) => idx);
+
+    const cRows: TableCellData[][] = [
+      initC.map((v, idx) => ({
+        value: v,
+        state: phase === 'init' ? 'active' : 'computed',
+      })),
+    ];
+    const cRowHeaders: string[] = ['1. Initial C[0..k] = 0'];
+
+    if (phase === 'freq' || phase === 'cum' || phase === 'place') {
+      cRowHeaders.push('2. Frequency C[A[j]]');
+      cRows.push(
+        freqC.map((v, idx) => ({
+          value: v,
+          state: phase === 'freq' ? 'active' : 'computed',
+          editableKey: `v1-freq-${idx}`,
+          expectedValue: v,
+          mistakeExplanation: `C[${idx}] counts how many times key ${idx} appears in A[1..${n}] (${v} times).`,
+        }))
+      );
+    }
+
+    if (phase === 'cum' || phase === 'place') {
+      cRowHeaders.push('3. Cumulative C[i] = C[i] + C[i-1]');
+      cRows.push(
+        cumC.map((v, idx) => ({
+          value: v,
+          state: phase === 'cum' ? 'match' : 'computed',
+          editableKey: `v1-cum-${idx}`,
+          expectedValue: v,
+          mistakeExplanation: `Cumulative C[${idx}] = total elements in A less than or equal to ${idx} (${v}).`,
+        }))
+      );
+    }
+
+    if (phase === 'place') {
+      cRowHeaders.push('4. Current C[0..k] (Decremented)');
+      cRows.push(
+        workC.map((v, idx) => ({
+          value: v,
+          state: idx === activeCIdx ? 'match' : 'computed',
+          editableKey: `v1-work-${idx}`,
+          expectedValue: v,
+          mistakeExplanation: `After placing ${idx} into B, C[${idx}] is decremented to ${v}.`,
+        }))
+      );
+    }
+
+    const tables: VisualTable[] = [
+      {
+        id: 'dcs-v1-ab',
+        title: '1-Based Input Array A[1..n] & Output Sorted Array B[1..n]',
+        subtitle: 'CLRS / 1st Variant: Indices run from 1 to n (no -1 offset needed when indexing B[C[A[j]]])',
+        colHeaders: oneBasedHeaders,
+        rowHeaders: ['Input A[1..n]', 'Output B[1..n]'],
+        rows: [
+          nums.map((v, idx) => ({
+            value: v,
+            state: idx + 1 === activeJ1Based ? 'active' : 'default',
+            tooltip: `A[${idx + 1}] = ${v}`,
+          })),
+          B.map((v, idx) => ({
+            value: v === '' ? '—' : v,
+            state: idx + 1 === activeB1Based ? 'match' : v !== '' ? 'computed' : 'unvisited',
+            editableKey: v !== '' ? `v1-b-${idx + 1}` : undefined,
+            expectedValue: v,
+            mistakeExplanation: `1-based position B[${idx + 1}] receives ${v} directly via B[C[A[j]]] ← A[j].`,
+          })),
+        ],
+        indexBase: '1-based (1 .. n)',
+      },
+      {
+        id: 'dcs-v1-c',
+        title: `0-Based Counter & Distribution Array C[0..${k}]`,
+        subtitle: `Always indexed from 0 up to max key k = ${k} (even if some keys have frequency 0) — Matches Slide 25–26 & Winter 2023 Q1`,
+        colHeaders: cHeaders.map((idx) => `C[${idx}]`),
+        rowHeaders: cRowHeaders,
+        rows: cRows,
+        indexBase: `0-based (0 .. ${k})`,
+      },
+    ];
+
+    if (placementHistory.length > 0) {
+      tables.push({
+        id: 'dcs-v1-history',
+        title: 'Winter 2023 MidTerm Q1 & Slide 25 Stepwise Placement Trace (j = n downto 1)',
+        subtitle: 'Each row shows B[C[A[j]]] ← A[j] followed by C[A[j]] ← C[A[j]] - 1',
+        colHeaders: [
+          'Key A[j]',
+          'Placed at B[pos]',
+          ...cHeaders.map((idx) => `C[${idx}]`),
+        ],
+        rowHeaders: placementHistory.map((h) => `j = ${h.j}`),
+        rows: placementHistory.map((h, rIdx) => [
+          {
+            value: `A[${h.j}] = ${h.aVal}`,
+            state: rIdx === placementHistory.length - 1 ? 'active' : 'computed',
+          },
+          {
+            value: `B[${h.bIdx}] ← ${h.aVal}`,
+            state: rIdx === placementHistory.length - 1 ? 'match' : 'computed',
+          },
+          ...h.cSnap.map((cVal, cIdx) => ({
+            value: cVal,
+            state: (
+              rIdx === placementHistory.length - 1 && cIdx === h.aVal ? 'match' : 'computed'
+            ) as TableCellData['state'],
+          })),
+        ]),
+      });
+    }
+
+    return tables;
+  };
+
+  // Step 1: Initialize C[0..k] = 0
+  steps.push({
+    stepNumber: 1,
+    codeLine: 2,
+    title: `Initialize Counter Array C[0..${k}] = 0`,
+    explanation: `In the 1st Variant (CLRS, Slide 24), C is allocated from index 0 up to the maximum key value k = ${k}. All ${k + 1} entries are initialized to 0.`,
+    formula: `for i ← 0 to ${k} do C[i] ← 0`,
+    variables: { 'A.length (n)': n, 'Max Key (k)': k },
+    tables: buildTables('init'),
+  });
+
+  // Step 2: Count frequencies
+  for (let idx = 0; idx < n; idx++) {
+    const val = nums[idx];
+    freqC[val]++;
+    cumC[val] = freqC[val];
+  }
+  steps.push({
+    stepNumber: 2,
+    codeLine: 5,
+    title: `Count Key Frequencies in C[0..${k}]`,
+    explanation: `Loop j from 1 to ${n} and increment C[A[j]]. Each C[i] now contains the number of elements equal to i: [${freqC.join(', ')}].`,
+    formula: `for j ← 1 to ${n} do C[A[j]] ← C[A[j]] + 1`,
+    variables: { 'Frequencies C[0..k]': `[${freqC.join(', ')}]` },
+    tables: buildTables('freq'),
+  });
+
+  // Step 3: Cumulative sum
+  for (let i = 1; i <= k; i++) {
+    cumC[i] = cumC[i] + cumC[i - 1];
+  }
+  for (let i = 0; i <= k; i++) {
+    workC[i] = cumC[i];
+  }
+  steps.push({
+    stepNumber: 3,
+    codeLine: 8,
+    title: `Compute Cumulative Positions C[i] = C[i] + C[i - 1]`,
+    explanation: `Loop i from 1 to ${k} and add C[i - 1] to C[i]. Now C[i] holds the number of elements ≤ i, which is the exact 1-based destination index in B[1..${n}]: [${cumC.join(', ')}].`,
+    formula: `for i ← 1 to ${k} do C[i] ← C[i] + C[i - 1]`,
+    variables: { 'Cumulative C[0..k]': `[${cumC.join(', ')}]` },
+    tables: buildTables('cum'),
+  });
+
+  // Step 4+: Right-to-left placement (j = n downto 1)
+  for (let j = n; j >= 1; j--) {
+    const aVal = nums[j - 1];
+    const destB = workC[aVal]; // 1-based index in B
+    B[destB - 1] = aVal;
+    workC[aVal] = workC[aVal] - 1;
+
+    placementHistory.push({
+      j,
+      aVal,
+      bIdx: destB,
+      cSnap: [...workC],
+      bSnap: [...B],
+    });
+
+    steps.push({
+      stepNumber: steps.length + 1,
+      codeLine: 11,
+      title: `j = ${j}: Place A[${j}] = ${aVal} into B[C[${aVal}]] = B[${destB}]`,
+      explanation: `Read A[${j}] = ${aVal}. Look up C[${aVal}] = ${destB}. Since B is 1-based, place ${aVal} directly into B[${destB}] (no -1 offset!), then decrement C[${aVal}] from ${destB} to ${workC[aVal]}.`,
+      formula: `B[C[A[${j}]]] = B[C[${aVal}]] = B[${destB}] ← ${aVal};   C[${aVal}] ← ${workC[aVal]}`,
+      variables: {
+        j,
+        'A[j]': aVal,
+        'Target B[C[A[j]]]': `B[${destB}]`,
+        'Updated C[A[j]]': workC[aVal],
+      },
+      tables: buildTables('place', j, aVal, destB),
+    });
+  }
+
+  return steps;
+}
+
+// ============================================================================
 // 2. DISTRIBUTION COUNTING SORT (2nd Variant - Levitin & Fall 2025 MidTerm Q1)
 // ============================================================================
 export function generateDistributionCountingSteps(inputStr: string): TraceStep[] {

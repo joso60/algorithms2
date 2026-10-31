@@ -23,13 +23,17 @@ import {
   ChevronLeft,
   GraduationCap,
   CheckCircle2,
+  AlertTriangle,
+  Ban,
+  X,
 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [selectedAlgId, setSelectedAlgId] = useState<AlgorithmId>('distribution-counting-sort');
+  const [selectedAlgId, setSelectedAlgId] = useState<AlgorithmId>('distribution-counting-sort-v1');
   const [activePillar, setActivePillar] = useState<PillarMode>('trace');
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showExclusionsGuide, setShowExclusionsGuide] = useState<boolean>(false);
 
   const currentAlgorithm = useMemo(
     () => ALL_ALGORITHMS.find((a) => a.id === selectedAlgId) || ALL_ALGORITHMS[0],
@@ -243,28 +247,44 @@ export const App: React.FC = () => {
             </button>
           </nav>
 
-          {/* Right: Prev / Next Algorithm Switcher */}
-          <div className="hidden xl:flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-400">
-              Topic {currentIndex + 1}/{ALL_ALGORITHMS.length}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={goPrevAlg}
-                disabled={currentIndex <= 0}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-slate-300 border border-slate-800 cursor-pointer"
-                title="Previous Algorithm"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={goNextAlg}
-                disabled={currentIndex >= ALL_ALGORITHMS.length - 1}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-slate-300 border border-slate-800 cursor-pointer"
-                title="Next Algorithm"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+          {/* Right: Syllabus Exclusions Button & Prev / Next Algorithm Switcher */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setShowExclusionsGuide((prev) => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                showExclusionsGuide
+                  ? 'bg-rose-600 text-white border-rose-400 shadow-sm'
+                  : 'bg-rose-950/50 hover:bg-rose-900/60 text-rose-200 border-rose-500/40'
+              }`}
+              title="View Official Syllabus Exclusions (Files 06, 07, 08, 10, 11, 12) & Past Exam Compliance"
+            >
+              <Ban className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline">Syllabus Exclusions &amp; Exam Rules</span>
+              <span className="sm:hidden">Exclusions</span>
+            </button>
+
+            <div className="hidden xl:flex items-center gap-2">
+              <span className="text-xs font-mono text-slate-400">
+                Topic {currentIndex + 1}/{ALL_ALGORITHMS.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={goPrevAlg}
+                  disabled={currentIndex <= 0}
+                  className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-slate-300 border border-slate-800 cursor-pointer"
+                  title="Previous Algorithm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={goNextAlg}
+                  disabled={currentIndex >= ALL_ALGORITHMS.length - 1}
+                  className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-slate-300 border border-slate-800 cursor-pointer"
+                  title="Next Algorithm"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -308,6 +328,7 @@ export const App: React.FC = () => {
                       const isSelected = alg.id === selectedAlgId;
                       const examCount = alg.midtermCount ?? 0;
                       const examPapers = alg.midtermPapers ?? [];
+                      const sylStatus = alg.syllabusInfo?.status ?? 'required';
 
                       const badgeStyle =
                         examCount >= 3
@@ -330,14 +351,42 @@ export const App: React.FC = () => {
                           className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all flex items-start justify-between gap-2 cursor-pointer ${
                             isSelected
                               ? 'bg-indigo-600/20 text-white border border-indigo-500/50 font-semibold shadow-sm'
+                              : sylStatus === 'excluded'
+                              ? 'text-slate-500 hover:text-slate-300 hover:bg-rose-950/25 border border-rose-500/20 bg-rose-950/10'
                               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/70 border border-transparent'
                           }`}
                         >
                           <div className="min-w-0">
-                            <div className="truncate">{alg.shortTitle}</div>
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`truncate ${
+                                  sylStatus === 'excluded' ? 'line-through decoration-rose-500/70' : ''
+                                }`}
+                              >
+                                {alg.shortTitle}
+                              </span>
+                            </div>
                             <div className="text-[10px] font-mono text-slate-500 truncate mt-0.5">
                               {alg.lectureFile.split('(')[0]}
                             </div>
+                            {sylStatus === 'excluded' && (
+                              <div
+                                className="mt-1 inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40"
+                                title={`${alg.syllabusInfo?.excludedSlides} — ${alg.syllabusInfo?.reason}`}
+                              >
+                                <Ban className="w-2.5 h-2.5" />
+                                <span>{alg.syllabusInfo?.badgeLabel || 'EXCLUDED'}</span>
+                              </div>
+                            )}
+                            {sylStatus === 'partial-exclusion' && (
+                              <div
+                                className="mt-1 inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                title={`Excluded: ${alg.syllabusInfo?.excludedSlides} | Required: ${alg.syllabusInfo?.requiredScope}`}
+                              >
+                                <AlertTriangle className="w-2.5 h-2.5" />
+                                <span>{alg.syllabusInfo?.badgeLabel || 'PARTIAL DEL'}</span>
+                              </div>
+                            )}
                           </div>
                           <span
                             className={`shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded border ${badgeStyle}`}
@@ -369,9 +418,259 @@ export const App: React.FC = () => {
         {/* Right Main Workspace */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+            {/* Collapsible Syllabus Exclusions & Past Exam Compliance Guide */}
+            {showExclusionsGuide && (
+              <div className="rounded-2xl border-2 border-rose-500/40 bg-slate-900/95 p-5 shadow-2xl space-y-5">
+                <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-3.5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Ban className="w-5 h-5 text-rose-400" />
+                      <h2 className="text-base sm:text-lg font-bold text-white">
+                        Official Syllabus Exclusions &amp; Past Exam Compliance Guide
+                      </h2>
+                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-rose-500/20 text-rose-200 border border-rose-500/40">
+                        Instructor Rules &amp; Blacklist
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1">
+                      Complete reference of removed slide ranges (Instructor Blacklist &amp; Red Syllabus Strikethroughs) and which past exam papers violate the <strong className="text-white">No-MCQ</strong> or <strong className="text-white">Excluded Topic</strong> rules.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowExclusionsGuide(false)}
+                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                    title="Close Exclusions Guide"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Part 1: Lecture Files Containing Exclusions */}
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-mono uppercase tracking-wider text-rose-300 font-bold">
+                    1. Lecture Files with Excluded Topics (Exact Slide Ranges)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div
+                      onClick={() => setSelectedAlgId('hashing')}
+                      className="p-3 rounded-xl bg-slate-950/90 border border-amber-500/30 hover:border-amber-400/60 transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white">File 06: Hashing</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          Slides 3–14 Excluded
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        <strong className="text-rose-300">Excluded:</strong> Dictionary ADT theoretical intro (Slides 3–14, crossed out in red).
+                      </p>
+                      <p className="text-[11px] text-emerald-300 font-mono">
+                        ✓ Required: Slide 15 to End (Hash Table).
+                      </p>
+                    </div>
+
+                    <div
+                      onClick={() => setSelectedAlgId('b-trees')}
+                      className="p-3 rounded-xl bg-slate-950/90 border border-amber-500/30 hover:border-amber-400/60 transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white">File 07: B-Trees</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          Slides 95–128 Excluded
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        <strong className="text-rose-300">Excluded:</strong> B-Tree Deletion, Balanced B-Trees, Balancing &amp; Combining (Slides 95–128).
+                      </p>
+                      <p className="text-[11px] text-emerald-300 font-mono">
+                        ✓ Required: Slides 1–94 (Search, Creation &amp; Insertion).
+                      </p>
+                    </div>
+
+                    <div
+                      onClick={() => setSelectedAlgId('assembly-line')}
+                      className="p-3 rounded-xl bg-rose-950/20 border border-rose-500/40 hover:border-rose-400 transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white">File 08: Assembly Line</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/25 text-rose-200 border border-rose-500/50">
+                          🚫 Slides 9–102 Excluded
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        <strong className="text-rose-300">Excluded:</strong> Assembly Line Scheduling Problem (Slides 9–102, most of File 08).
+                      </p>
+                      <p className="text-[11px] text-emerald-300 font-mono">
+                        ✓ Required: Slides 1–8 ONLY (General DP Intro).
+                      </p>
+                    </div>
+
+                    <div
+                      onClick={() => setSelectedAlgId('lcs')}
+                      className="p-3 rounded-xl bg-rose-950/20 border border-rose-500/40 hover:border-rose-400 transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white">File 10: LCS</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/25 text-rose-200 border border-rose-500/50">
+                          🚫 Entire File Excluded
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        <strong className="text-rose-300">Excluded:</strong> Longest Common Subsequence (File 10 is completely removed from first to last slide).
+                      </p>
+                      <p className="text-[11px] text-rose-300 font-mono">
+                        ✗ Required: None (Entire File 10 excluded).
+                      </p>
+                    </div>
+
+                    <div
+                      onClick={() => setSelectedAlgId('coin-collecting')}
+                      className="p-3 rounded-xl bg-rose-950/20 border border-rose-500/40 hover:border-rose-400 transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white">File 11: Coin Collecting</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/25 text-rose-200 border border-rose-500/50">
+                          🚫 Slides 117–141 Excluded
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        <strong className="text-rose-300">Excluded:</strong> Last section on Robot Coin Collecting (Slides 117–141).
+                      </p>
+                      <p className="text-[11px] text-emerald-300 font-mono">
+                        ✓ Required: Slides 1–116 (Coin-Row &amp; Change-Making).
+                      </p>
+                    </div>
+
+                    <div
+                      onClick={() => setSelectedAlgId('knapsack-01')}
+                      className="p-3 rounded-xl bg-slate-950/90 border border-amber-500/30 hover:border-amber-400/60 transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white">File 12: 0/1 Knapsack</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          Slides 123–177 Excluded
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        <strong className="text-rose-300">Excluded:</strong> Memory Function Top-Down Algorithm (Slides 123–177, crossed out in red).
+                      </p>
+                      <p className="text-[11px] text-emerald-300 font-mono">
+                        ✓ Required: Slides 1–122 (Standard Bottom-Up Knapsack).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Part 2: Past Exam Compliance vs Instructor Rules */}
+                <div className="space-y-2.5 pt-2 border-t border-slate-800">
+                  <h3 className="text-xs font-mono uppercase tracking-wider text-amber-300 font-bold">
+                    2. Past Exam Papers Compliance vs. Instructor Rules (No MCQs &amp; Excluded Topics)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-emerald-950/25 border border-emerald-500/40 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-emerald-300">
+                          ✅ MidTerm Exam — Fall 2025 (Model Compliant Exam)
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
+                          100% COMPLIANT
+                        </span>
+                      </div>
+                      <p className="text-slate-300 text-[11px]">
+                        The ONLY past midterm that is 100% compliant with instructor guidelines: contains <strong className="text-white">zero MCQs</strong> (8 written tracing/analysis questions) and every single question falls strictly within the required syllabus (Distribution Counting V2, Horspool, Boyer-Moore, Bottom-Up 0/1 Knapsack, Mystry Loop Analysis, OBST, Floyd, B-Tree Insertion).
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-950/90 border border-rose-500/30 space-y-1.5 text-[11px]">
+                      <div className="font-bold text-rose-300">
+                        ⚠️ Past Exams with Excluded Questions or MCQs:
+                      </div>
+                      <ul className="space-y-1 text-slate-300 list-disc list-inside">
+                        <li>
+                          <strong className="text-white">MidTerm — Winter 2023:</strong> Contains MCQs in Q1 &amp; Q4 (violates No-MCQ rule) and Q4 tests <span className="text-rose-300 font-semibold">Assembly Line Scheduling (Excluded)</span>.
+                        </li>
+                        <li>
+                          <strong className="text-white">MidTerm — Fall 2020:</strong> Question 05 asks to delete key <code>M</code> from a B-Tree (<span className="text-rose-300 font-semibold">B-Tree Deletion is Excluded</span>).
+                        </li>
+                        <li>
+                          <strong className="text-white">MidTerm — Spring 2021:</strong> Question 05 asks to delete keys <code>2, 8, 22</code> from a B-Tree (<span className="text-rose-300 font-semibold">B-Tree Deletion is Excluded</span>).
+                        </li>
+                        <li>
+                          <strong className="text-white">Final Exams — Fall 2021 &amp; Spring 2021:</strong> Question 01 asks about <span className="text-rose-300 font-semibold">Robot Coin-Collection (Excluded section of File 11)</span>.
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Algorithm Header Card (shown in Trace & Analyze modes; Design mode focuses on the 3 Core Paradigms) */}
             {activePillar !== 'design' && (
-              <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900/95 via-slate-900/90 to-indigo-950/30 p-5 shadow-lg">
+              <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900/95 via-slate-900/90 to-indigo-950/30 p-5 shadow-lg space-y-4">
+                {/* Per-Algorithm Syllabus Exclusion / Partial Exclusion Banner */}
+                {currentAlgorithm.syllabusInfo &&
+                  currentAlgorithm.syllabusInfo.status !== 'required' && (
+                    <div
+                      className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        currentAlgorithm.syllabusInfo.status === 'excluded'
+                          ? 'bg-rose-950/40 border-rose-500/50 text-rose-100'
+                          : 'bg-amber-950/35 border-amber-500/40 text-amber-100'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
+                              currentAlgorithm.syllabusInfo.status === 'excluded'
+                                ? 'bg-rose-500/30 text-rose-200 border-rose-400/50'
+                                : 'bg-amber-500/25 text-amber-200 border-amber-400/50'
+                            }`}
+                          >
+                            {currentAlgorithm.syllabusInfo.status === 'excluded' ? (
+                              <Ban className="w-3.5 h-3.5" />
+                            ) : (
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                            )}
+                            <span>
+                              {currentAlgorithm.syllabusInfo.status === 'excluded'
+                                ? 'EXCLUDED FROM SYLLABUS'
+                                : 'PARTIAL SYLLABUS EXCLUSION'}
+                            </span>
+                          </span>
+                          <span className="text-xs font-semibold">
+                            {currentAlgorithm.syllabusInfo.reason}
+                          </span>
+                        </div>
+                        <div className="text-xs space-y-0.5 font-mono">
+                          <div>
+                            <span className="text-rose-300 font-bold">✗ Excluded Slides: </span>
+                            <span className="text-slate-200">
+                              {currentAlgorithm.syllabusInfo.excludedSlides}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-emerald-300 font-bold">✓ Required Scope: </span>
+                            <span className="text-slate-200">
+                              {currentAlgorithm.syllabusInfo.requiredScope}
+                            </span>
+                          </div>
+                          {currentAlgorithm.syllabusInfo.affectedExams &&
+                            currentAlgorithm.syllabusInfo.affectedExams.length > 0 && (
+                              <div>
+                                <span className="text-amber-300 font-bold">
+                                  ⚠️ Affected Past Exam Questions:{' '}
+                                </span>
+                                <span className="text-slate-300">
+                                  {currentAlgorithm.syllabusInfo.affectedExams.join(' • ')}
+                                </span>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">

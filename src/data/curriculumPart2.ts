@@ -12,8 +12,18 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     category: 'dynamic-programming',
     categoryLabel: 'Module 3: Dynamic Programming',
     indexingRule: '1-based stations: j = 1..n, Lines i = 1, 2, l[i, j] for j = 2..n',
+    syllabusInfo: {
+      status: 'excluded',
+      badgeLabel: 'EXCLUDED (SLIDES 9–102)',
+      excludedSlides: 'Slides 9 to 102 (Case Studies: Assembly Line Scheduling Problem — most of File 08)',
+      requiredScope: 'Slides 1 to 8 ONLY (General Introduction to Dynamic Programming)',
+      reason: 'Excluded per Instructor Blacklist & Official Syllabus: Assembly Line Scheduling Problem is removed.',
+      affectedExams: [
+        'Winter 2023 Midterm Exam Q4 (Assembly Line Scheduling & MCQs — EXCLUDED)',
+      ],
+    },
     summary:
-      'Finds the fastest path for an automobile chassis through two parallel assembly lines with n stations each, accounting for entry costs (e₁, e₂), station costs (a_{i,j}), transfer costs (t_{i,j}), and exit costs (x₁, x₂).',
+      '🚫 [EXCLUDED FROM SYLLABUS — Slides 9–102 of File 08; only Slides 1–8 General DP Intro are required]. Finds the fastest path for an automobile chassis through two parallel assembly lines with n stations each.',
     pseudocodeTitle: 'Algorithm: Fastest-Way(a, t, e, x, n)',
     pseudocodeLines: [
       'f₁[1] ← e₁ + a_{1,1}',
@@ -385,8 +395,15 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     category: 'dynamic-programming',
     categoryLabel: 'Module 3: Dynamic Programming',
     indexingRule: '1-based strings X[1..m], Y[1..n], table c[0..m, 0..n], arrows b[1..m, 1..n]',
+    syllabusInfo: {
+      status: 'excluded',
+      badgeLabel: 'EXCLUDED (ENTIRE FILE 10)',
+      excludedSlides: 'Entire File 10 (From Slide 1 to the last slide)',
+      requiredScope: 'None — File 10 is completely excluded from the syllabus',
+      reason: 'Excluded per Instructor Blacklist: Longest Common Subsequence (File 10) is completely removed.',
+    },
     summary:
-      'Finds the longest subsequence common to two sequences X[1..m] and Y[1..n] using DP length table c[0..m, 0..n] and directional arrows b[1..m, 1..n] (↖, ↑, ←), then reconstructs the sequence with PRINT-LCS.',
+      '🚫 [EXCLUDED FROM SYLLABUS — Entire File 10 is removed per Instructor Blacklist]. Finds the longest subsequence common to two sequences X[1..m] and Y[1..n] using DP length table c[0..m, 0..n] and directional arrows b[1..m, 1..n].',
     pseudocodeTitle: 'Algorithm: LCS-Length(X[1..m], Y[1..n])',
     pseudocodeLines: [
       'm ← length[X];  n ← length[Y]',
@@ -763,12 +780,23 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     id: 'coin-collecting',
     title: 'Robot Coin Collecting Problem',
     shortTitle: 'Robot Coin Collecting',
-    lectureFile: '11-CPCS 324 - DP-CR-CM-CC.pptx (Slides 118–183)',
+    lectureFile: '11-CPCS 324 - DP-CR-CM-CC.pptx (Slides 117–End)',
     category: 'dynamic-programming',
     categoryLabel: 'Module 3: Dynamic Programming',
     indexingRule: '1-based n × m board: C[1..n, 1..m] and DP table F[1..n, 1..m]',
+    syllabusInfo: {
+      status: 'excluded',
+      badgeLabel: 'EXCLUDED (SLIDES 117–END)',
+      excludedSlides: 'Slides 117 to 141 / End of File 11 (Case Studies: Coin Collecting Problem)',
+      requiredScope: 'Slides 1 to 116 of File 11 ONLY (Coin-Row Problem & Change-Making Problem)',
+      reason: 'Excluded per Instructor Blacklist: Coin Collecting (last section of File 11) is removed.',
+      affectedExams: [
+        'Final Exam Fall 2021 Q1 (Robot Coin-Collection — EXCLUDED)',
+        'Final Exam Spring 2021 Q1 (Robot Coin-Collection — EXCLUDED)',
+      ],
+    },
     summary:
-      'A robot starts at upper-left cell (1, 1) of an n × m board and moves only Right or Down to reach (n, m), collecting the maximum number of coins via F[i, j] = max(F[i - 1, j], F[i, j - 1]) + C[i, j].',
+      '🚫 [EXCLUDED FROM SYLLABUS — Last section of File 11 (Slides 117–End); only Coin-Row and Change-Making (Slides 1–116) are required]. A robot starts at upper-left cell (1, 1) of an n × m board and moves only Right or Down.',
     pseudocodeTitle: 'Algorithm: RobotCoinCollection(C[1..n, 1..m])',
     pseudocodeLines: [
       'F[1, 1] ← C[1, 1]',
@@ -880,14 +908,21 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
   // ==========================================================================
   {
     id: 'knapsack-01',
-    title: '0/1 Knapsack & Memory Function (MFKnapsack)',
-    shortTitle: '0/1 Knapsack & Memory Function',
+    title: '0/1 Knapsack Problem (Bottom-Up DP)',
+    shortTitle: '0/1 Knapsack Problem',
     lectureFile: '12-CPCS 324 - DP-KnapsackProblem.pptx & Fall 2025 MidTerm Q4',
     category: 'dynamic-programming',
     categoryLabel: 'Module 3: Dynamic Programming',
     indexingRule: '1-based items i = 1..n, 0-based capacity j = 0..W, Table F[0..n, 0..W]',
+    syllabusInfo: {
+      status: 'partial-exclusion',
+      badgeLabel: 'MEMORY FUNC EXCLUDED (123–177)',
+      excludedSlides: 'Slides 123 to 177 (Memory Function Algorithm / Top-Down MFKnapsack)',
+      requiredScope: 'Slides 1 to 122 ONLY (Standard Bottom-Up Dynamic Programming for 0/1 Knapsack)',
+      reason: 'Crossed out in red in the official syllabus: Memory Functions in File 12 are excluded.',
+    },
     summary:
-      'Solves the 0/1 Knapsack Problem using both Bottom-Up DP (filling all n×W cells) and Top-Down Memory Function MFKnapsack(i, j) (initializing F[1..n, 1..W] = -1 and solving only necessary subproblems).',
+      'Solves the 0/1 Knapsack Problem using standard Bottom-Up DP (Slides 1–122, required in syllabus & Fall 2025 Midterm Q4). (Note: Slides 123–177 on Top-Down Memory Function MFKnapsack are EXCLUDED per the official syllabus).',
     pseudocodeTitle: 'Algorithm: BottomUpKnapsack(w[1..n], v[1..n], W)',
     pseudocodeLines: [
       'for i ← 0 to n do F[i, 0] ← 0',
