@@ -61,8 +61,32 @@ export const TraceView: React.FC<TraceViewProps> = ({
   const [activeMistakeTooltip, setActiveMistakeTooltip] = useState<string | null>(null);
   const [showCustomSandbox, setShowCustomSandbox] = useState(false);
 
+  // Separate optional step-by-step sub-traces for Bad-Symbol t1(c) and Good-Suffix d2(k)
+  const [showBadSymbolTrace, setShowBadSymbolTrace] = useState(false);
+  const [badSymbolStepIdx, setBadSymbolStepIdx] = useState(0);
+  const [showGoodSuffixTrace, setShowGoodSuffixTrace] = useState(false);
+  const [goodSuffixK, setGoodSuffixK] = useState(1);
+  const [goodSuffixTestShift, setGoodSuffixTestShift] = useState<number | null>(null);
+
   const safeStepIdx = Math.min(Math.max(0, currentStepIdx), Math.max(0, steps.length - 1));
   const currentStep = steps[safeStepIdx] || steps[0];
+
+  // Determine if a Bad-Symbol or Good-Suffix sub-trace is currently open so arrow keys & controls target it
+  const activeSubTracePattern = (
+    currentStep?.stringView?.pattern ||
+    (currentStep?.tables?.find(
+      (t) => t.id === 'bm-bad-symbol' || t.id === 'horspool-shift-table' || t.id === 'bm-good-suffix'
+    )?.title.match(/"([^"]+)"/)?.[1] ?? '')
+  ).trim();
+  const subTraceM = activeSubTracePattern.length;
+  const isBadSymbolTraceActive =
+    showBadSymbolTrace &&
+    (algorithm.id === 'boyer-moore' || algorithm.id === 'horspool') &&
+    subTraceM > 0;
+  const isGoodSuffixTraceActive =
+    showGoodSuffixTrace &&
+    algorithm.id === 'boyer-moore' &&
+    subTraceM > 1;
 
   // Reset playback and practice state when algorithm or example changes
   useEffect(() => {
@@ -70,6 +94,11 @@ export const TraceView: React.FC<TraceViewProps> = ({
     setUserAnswers({});
     setCheckedPractice(false);
     setActiveMistakeTooltip(null);
+    setShowBadSymbolTrace(false);
+    setBadSymbolStepIdx(0);
+    setShowGoodSuffixTrace(false);
+    setGoodSuffixK(1);
+    setGoodSuffixTestShift(null);
   }, [algorithm.id, selectedExampleId]);
 
   useEffect(() => {
@@ -84,7 +113,7 @@ export const TraceView: React.FC<TraceViewProps> = ({
     return () => clearTimeout(timer);
   }, [isPlaying, safeStepIdx, steps.length, speedMs, setCurrentStepIdx]);
 
-  // Keyboard navigation: Left/Right arrow keys to step backward/forward through the trace
+  // Keyboard navigation: Left/Right arrow keys control the open sub-trace if active, otherwise the main algorithm trace
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -101,17 +130,37 @@ export const TraceView: React.FC<TraceViewProps> = ({
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         setIsPlaying(false);
-        setCurrentStepIdx((prev) => Math.min(Math.max(0, steps.length - 1), prev + 1));
+        if (isBadSymbolTraceActive) {
+          setBadSymbolStepIdx((prev) => Math.min(subTraceM, prev + 1));
+        } else if (isGoodSuffixTraceActive) {
+          setGoodSuffixK((prev) => Math.min(subTraceM - 1, prev + 1));
+          setGoodSuffixTestShift(null);
+        } else {
+          setCurrentStepIdx((prev) => Math.min(Math.max(0, steps.length - 1), prev + 1));
+        }
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         setIsPlaying(false);
-        setCurrentStepIdx((prev) => Math.max(0, prev - 1));
+        if (isBadSymbolTraceActive) {
+          setBadSymbolStepIdx((prev) => Math.max(0, prev - 1));
+        } else if (isGoodSuffixTraceActive) {
+          setGoodSuffixK((prev) => Math.max(1, prev - 1));
+          setGoodSuffixTestShift(null);
+        } else {
+          setCurrentStepIdx((prev) => Math.max(0, prev - 1));
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [steps.length, setCurrentStepIdx]);
+  }, [
+    steps.length,
+    setCurrentStepIdx,
+    isBadSymbolTraceActive,
+    isGoodSuffixTraceActive,
+    subTraceM,
+  ]);
 
   // In "Test Yourself" practice mode, jump to last step that has editable tables
   const handleTogglePracticeMode = () => {
@@ -1078,7 +1127,778 @@ export const TraceView: React.FC<TraceViewProps> = ({
     );
   };
 
-  const renderVisualTable = (tbl: VisualTable) => (
+  const renderBadSymbolSubTrace = (pattern: string, displayCols: (string | number)[]) => {
+    const P = pattern.trim();
+    const m = P.length;
+    if (m === 0) return null;
+
+    // Total steps:
+    // step 0: Initialization (all = m)
+    // step 1 .. m-1: Loop j = 0 .. m-2 (setting t1(P[j]) = m - 1 - j)
+    // step m: Final summary (why last character j = m-1 is excluded)
+    const totalSubSteps = m + 1;
+    const safeSubStep = Math.min(Math.max(0, badSymbolStepIdx), totalSubSteps - 1);
+    const activeJ = safeSubStep >= 1 && safeSubStep <= m - 1 ? safeSubStep - 1 : null;
+
+    // Compute table state up to safeSubStep
+    const currentMap: Record<string, number> = {};
+    const prevValueAtActiveJ: { hadPrev: boolean; oldVal: number } = { hadPrev: false, oldVal: m };
+
+    const maxJProcessed = safeSubStep === 0 ? -1 : Math.min(safeSubStep - 1, m - 2);
+    for (let j = 0; j <= maxJProcessed; j++) {
+      const ch = P[j];
+      const dist = m - 1 - j;
+      if (j === activeJ) {
+        if (ch in currentMap) {
+          prevValueAtActiveJ.hadPrev = true;
+          prevValueAtActiveJ.oldVal = currentMap[ch];
+        } else {
+          prevValueAtActiveJ.hadPrev = false;
+          prevValueAtActiveJ.oldVal = m;
+        }
+      }
+      currentMap[ch] = dist;
+    }
+
+    return (
+      <div className="mt-4 rounded-xl border border-indigo-500/40 bg-slate-950/95 p-4 space-y-4">
+        {/* Sub-Trace Header & Step Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-indigo-500/20 border border-indigo-500/40 px-2 py-0.5 font-mono text-[11px] font-bold text-indigo-300">
+                Bad-Symbol Trace: Step {safeSubStep} of {totalSubSteps - 1}
+              </span>
+              <h5 className="text-xs sm:text-sm font-bold text-white">
+                How Bad-Symbol Shift Table t₁(c) is Computed for &quot;{P}&quot; (m = {m})
+              </h5>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Rule: Initialize all characters to <code>m = {m}</code>. Then scan <code>j = 0</code> to <code>m − 2 ({m - 2})</code> from left to right and set <code>t₁(P[j]) = m − 1 − j</code> (the last character at <code>j = {m - 1}</code> is excluded!).
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1 rounded border border-indigo-500/40 bg-indigo-950/70 px-2 py-0.5 font-mono text-[10px] text-indigo-300">
+              ⌨️ ← → Active Here
+            </span>
+            <button
+              type="button"
+              disabled={safeSubStep <= 0}
+              onClick={() => setBadSymbolStepIdx((p) => Math.max(0, p - 1))}
+              className="rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 px-3 py-1 text-xs font-semibold text-slate-200 transition cursor-pointer"
+            >
+              ← Prev
+            </button>
+            <button
+              type="button"
+              disabled={safeSubStep >= totalSubSteps - 1}
+              onClick={() => setBadSymbolStepIdx((p) => Math.min(totalSubSteps - 1, p + 1))}
+              className="rounded-lg border border-indigo-500/50 bg-indigo-600/20 hover:bg-indigo-600/30 disabled:opacity-40 px-3 py-1 text-xs font-semibold text-indigo-200 transition cursor-pointer"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+
+        {/* Step Pills */}
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setBadSymbolStepIdx(0)}
+            className={`rounded-md px-2.5 py-1 font-mono text-[11px] transition cursor-pointer border ${
+              safeSubStep === 0
+                ? 'border-indigo-400 bg-indigo-500/25 text-white font-bold'
+                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            0. Init All = {m}
+          </button>
+          {Array.from({ length: Math.max(0, m - 1) }, (_, j) => {
+            const stepNum = j + 1;
+            const isCurr = safeSubStep === stepNum;
+            return (
+              <button
+                key={j}
+                type="button"
+                onClick={() => setBadSymbolStepIdx(stepNum)}
+                className={`rounded-md px-2.5 py-1 font-mono text-[11px] transition cursor-pointer border ${
+                  isCurr
+                    ? 'border-[#7c6df2] bg-[#7c6df2] text-white font-bold shadow-sm'
+                    : safeSubStep > stepNum
+                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                j={j} (&apos;{P[j]}&apos; → {m - 1 - j})
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setBadSymbolStepIdx(m)}
+            className={`rounded-md px-2.5 py-1 font-mono text-[11px] transition cursor-pointer border ${
+              safeSubStep === m
+                ? 'border-amber-400 bg-amber-500/25 text-amber-200 font-bold'
+                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Why Last j={m - 1} (&apos;{P[m - 1]}&apos;) is Ignored
+          </button>
+        </div>
+
+        {/* Visual Pattern Ruler: Indices j, Characters P[j], and Distances (m - 1 - j) */}
+        <div className="overflow-x-auto">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+            1. Pattern Character Positions &amp; Distance to Last Index (m − 1 = {m - 1}):
+          </div>
+          <table className="w-full border-collapse font-mono text-xs">
+            <thead>
+              <tr>
+                <th className="border border-slate-800 bg-slate-900 px-3 py-1.5 text-left text-slate-400">
+                  Index j
+                </th>
+                {P.split('').map((_, j) => {
+                  const isLast = j === m - 1;
+                  const isCurrentJ = activeJ === j;
+                  return (
+                    <th
+                      key={j}
+                      className={`border border-slate-800 px-3 py-1.5 text-center ${
+                        isCurrentJ
+                          ? 'bg-[#7c6df2]/30 text-white font-bold'
+                          : isLast
+                          ? 'bg-rose-950/40 text-rose-300'
+                          : 'bg-slate-900 text-slate-300'
+                      }`}
+                    >
+                      j = {j} {isLast ? '(Last - Excluded)' : ''}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-slate-800 bg-slate-900 px-3 py-2 font-semibold text-slate-300">
+                  Pattern P[j]
+                </td>
+                {P.split('').map((ch, j) => {
+                  const isLast = j === m - 1;
+                  const isCurrentJ = activeJ === j;
+                  const isDone = j <= maxJProcessed;
+                  return (
+                    <td
+                      key={j}
+                      className={`border px-3 py-2 text-center text-sm font-bold transition-all ${
+                        isCurrentJ
+                          ? 'border-[#a78bfa] bg-[#7c6df2] text-white ring-2 ring-[#a78bfa]/50'
+                          : isLast
+                          ? safeSubStep === m
+                            ? 'border-amber-500 bg-amber-500/20 text-amber-200'
+                            : 'border-slate-800 bg-rose-950/25 text-slate-400 line-through'
+                          : isDone
+                          ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200'
+                          : 'border-slate-800 bg-slate-950 text-slate-400'
+                      }`}
+                    >
+                      {ch}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr>
+                <td className="border border-slate-800 bg-slate-900 px-3 py-1.5 font-semibold text-slate-400">
+                  Distance: (m − 1) − j = {m - 1} − j
+                </td>
+                {P.split('').map((_, j) => {
+                  const isLast = j === m - 1;
+                  const isCurrentJ = activeJ === j;
+                  const dist = m - 1 - j;
+                  return (
+                    <td
+                      key={j}
+                      className={`border border-slate-800 px-3 py-1.5 text-center ${
+                        isCurrentJ
+                          ? 'bg-[#7c6df2]/20 text-[#c4b5fd] font-bold'
+                          : isLast
+                          ? 'bg-rose-950/20 text-rose-400 italic'
+                          : 'bg-slate-950 text-slate-300'
+                      }`}
+                    >
+                      {isLast ? '0 (Skipped)' : `${m - 1} − ${j} = ${dist}`}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Step Explanation Box */}
+        <div className="rounded-lg border border-slate-800 bg-slate-900/90 p-3 font-mono text-xs space-y-1">
+          {safeSubStep === 0 && (
+            <>
+              <div className="font-bold text-indigo-300">
+                Step 0 (Initialization): Set t₁(c) = m = {m} for all alphabet characters
+              </div>
+              <div className="font-sans text-slate-300">
+                Any character that does <strong>not</strong> appear among the first <code>m − 1 = {m - 1}</code> characters of the pattern gets the full pattern length shift <code>m = {m}</code>.
+              </div>
+            </>
+          )}
+          {activeJ !== null && (
+            <>
+              <div className="font-bold text-[#c4b5fd]">
+                Step {safeSubStep} (j = {activeJ}): Process P[{activeJ}] = &apos;{P[activeJ]}&apos;  ⇒  t₁(&apos;{P[activeJ]}&apos;) = {m - 1} − {activeJ} = {m - 1 - activeJ}
+              </div>
+              <div className="font-sans text-slate-300">
+                Distance from index <code>j = {activeJ}</code> to the last index <code>m − 1 = {m - 1}</code> is <code>{m - 1} − {activeJ} = {m - 1 - activeJ}</code>.{' '}
+                {prevValueAtActiveJ.hadPrev ? (
+                  <span className="text-amber-300 font-semibold">
+                    Notice: &apos;{P[activeJ]}&apos; had an earlier shift of {prevValueAtActiveJ.oldVal}, which is now overwritten with {m - 1 - activeJ} because index j = {activeJ} is further to the right!
+                  </span>
+                ) : (
+                  <span>
+                    We update <code>t₁(&apos;{P[activeJ]}&apos;)</code> from default <code>{m}</code> to <code>{m - 1 - activeJ}</code>.
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+          {safeSubStep === m && (
+            <>
+              <div className="font-bold text-amber-300">
+                Final Check (j = {m - 1}): Why Last Character P[{m - 1}] = &apos;{P[m - 1]}&apos; is Excluded from Loop
+              </div>
+              <div className="font-sans text-slate-300">
+                The loop only runs for <code>j = 0</code> to <code>m − 2 ({m - 2})</code>. If we included <code>j = {m - 1}</code>, its distance would be <code>{m - 1} − {m - 1} = 0</code> (a shift of 0 would cause an infinite loop!).{' '}
+                {P.slice(0, m - 1).includes(P[m - 1]) ? (
+                  <span className="text-emerald-300 font-semibold">
+                    Since &apos;{P[m - 1]}&apos; already appeared earlier in P[0..{m - 2}] (rightmost at j = {P.slice(0, m - 1).lastIndexOf(P[m - 1])}), its final shift is t₁(&apos;{P[m - 1]}&apos;) = {currentMap[P[m - 1]]}.
+                  </span>
+                ) : (
+                  <span className="text-emerald-300 font-semibold">
+                    Since &apos;{P[m - 1]}&apos; did NOT appear anywhere in P[0..{m - 2}], its final shift remains the full length m = {m}.
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Live Evolving Shift Table at Current Sub-Step */}
+        <div className="overflow-x-auto">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+            2. Shift Table State After Step {safeSubStep}:
+          </div>
+          <table className="w-full border-collapse font-mono text-xs">
+            <thead>
+              <tr>
+                <th className="border border-slate-800 bg-slate-900 px-3 py-1.5 text-left text-slate-400">
+                  Character c
+                </th>
+                {displayCols.map((col, idx) => (
+                  <th
+                    key={idx}
+                    className="border border-slate-800 bg-slate-900 px-3 py-1.5 text-center text-slate-300"
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-slate-800 bg-slate-900 px-3 py-2 font-semibold text-slate-300">
+                  t₁(c)
+                </td>
+                {displayCols.map((col, idx) => {
+                  const chStr = String(col);
+                  const val = chStr === 'Other (*)' ? m : (currentMap[chStr] ?? m);
+                  const isJustUpdated = activeJ !== null && P[activeJ] === chStr;
+                  const isUpdatedEarlier = chStr !== 'Other (*)' && chStr in currentMap && !isJustUpdated;
+                  return (
+                    <td
+                      key={idx}
+                      className={`border px-3 py-2 text-center font-bold transition-all ${
+                        isJustUpdated
+                          ? 'border-[#a78bfa] bg-[#7c6df2] text-white ring-2 ring-[#a78bfa]/50'
+                          : isUpdatedEarlier
+                          ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200'
+                          : 'border-slate-800 bg-slate-950 text-slate-400'
+                      }`}
+                    >
+                      {val}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderGoodSuffixSubTrace = (pattern: string) => {
+    const P = pattern.trim();
+    const m = P.length;
+    if (m <= 1) return null;
+
+    const safeK = Math.min(Math.max(1, goodSuffixK), m - 1);
+    const suff = P.slice(m - safeK);
+    const suffixStartIdx = m - safeK;
+    const precedingIdx = m - safeK - 1;
+    const precedingChar = P[precedingIdx];
+
+    // Rule 1: Scan from right to left for another occurrence of `suff` inside P[0 .. m - 2]
+    // that is NOT preceded by `precedingChar`
+    const interiorOccurrences: {
+      start: number;
+      end: number;
+      shift: number;
+      charBefore: string | null;
+      valid: boolean;
+    }[] = [];
+
+    let case1WinnerShift: number | null = null;
+    let case1WinnerStart: number | null = null;
+    for (let start = m - safeK - 1; start >= 0; start--) {
+      if (P.slice(start, start + safeK) === suff) {
+        const charBefore = start > 0 ? P[start - 1] : null;
+        const valid = charBefore !== precedingChar;
+        const shift = suffixStartIdx - start;
+        interiorOccurrences.push({
+          start,
+          end: start + safeK - 1,
+          shift,
+          charBefore,
+          valid,
+        });
+        if (valid && case1WinnerShift === null) {
+          case1WinnerShift = shift;
+          case1WinnerStart = start;
+        }
+      }
+    }
+
+    // Rule 2: If Rule 1 found no valid match, check longest prefix of P[0..l-1]
+    // that matches the ending (tail suffix) P[m-l..m-1] of `suff` (for 1 <= l < k)
+    const prefixChecks: {
+      len: number;
+      prefixStr: string;
+      tailSuffixStr: string;
+      matches: boolean;
+      shift: number;
+    }[] = [];
+
+    let case2WinnerLen = 0;
+    for (let len = safeK - 1; len >= 1; len--) {
+      const prefixStr = P.slice(0, len);
+      const tailSuffixStr = P.slice(m - len);
+      const matches = prefixStr === tailSuffixStr;
+      prefixChecks.push({
+        len,
+        prefixStr,
+        tailSuffixStr,
+        matches,
+        shift: m - len,
+      });
+      if (matches && case2WinnerLen === 0) {
+        case2WinnerLen = len;
+      }
+    }
+
+    const finalD2 =
+      case1WinnerShift !== null
+        ? case1WinnerShift
+        : case2WinnerLen > 0
+        ? m - case2WinnerLen
+        : m;
+
+    return (
+      <div className="mt-4 rounded-xl border border-emerald-500/40 bg-slate-950/95 p-4 space-y-4">
+        {/* Top Bar: k Selector & Prev/Next Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-300">
+                k = {safeK} of {m - 1}
+              </span>
+              <h5 className="text-sm font-bold text-white">
+                Finding Good-Suffix Shift <span className="font-mono text-emerald-300">d₂({safeK}) = {finalD2}</span> for Matched Suffix <span className="font-mono text-emerald-300">&quot;{suff}&quot;</span>
+              </h5>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Choose how many characters matched from the right (<code>k</code>) to see how <code>d₂(k)</code> is found in 2 simple steps.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-950/70 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+              ⌨️ ← → Active Here
+            </span>
+            <button
+              type="button"
+              disabled={safeK <= 1}
+              onClick={() => {
+                setGoodSuffixK((k) => Math.max(1, k - 1));
+                setGoodSuffixTestShift(null);
+              }}
+              className="rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 px-3 py-1 text-xs font-semibold text-slate-200 transition cursor-pointer"
+            >
+              ← Prev k
+            </button>
+            <button
+              type="button"
+              disabled={safeK >= m - 1}
+              onClick={() => {
+                setGoodSuffixK((k) => Math.min(m - 1, k + 1));
+                setGoodSuffixTestShift(null);
+              }}
+              className="rounded-lg border border-emerald-500/50 bg-emerald-600/20 hover:bg-emerald-600/30 disabled:opacity-40 px-3 py-1 text-xs font-semibold text-emerald-200 transition cursor-pointer"
+            >
+              Next k →
+            </button>
+          </div>
+        </div>
+
+        {/* k Selection Buttons */}
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: m - 1 }, (_, idx) => {
+            const kVal = idx + 1;
+            const kSuff = P.slice(m - kVal);
+            const isSelected = safeK === kVal;
+            return (
+              <button
+                key={kVal}
+                type="button"
+                onClick={() => {
+                  setGoodSuffixK(kVal);
+                  setGoodSuffixTestShift(null);
+                }}
+                className={`rounded-md px-3 py-1.5 font-mono text-xs transition cursor-pointer border ${
+                  isSelected
+                    ? 'border-emerald-400 bg-emerald-500/25 text-white font-bold shadow-sm'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                k = {kVal} (&quot;{kSuff}&quot;)
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Visual Box 1: Pattern Situation for k */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5">
+          <div className="text-xs font-semibold text-slate-300 mb-2.5">
+            What <code className="text-emerald-300">k = {safeK}</code> means on Pattern <code className="text-white">&quot;{P}&quot;</code>:
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="inline-flex items-center gap-1 font-mono">
+              {P.split('').map((ch, idx) => {
+                const isMatchedSuffix = idx >= suffixStartIdx;
+                const isMismatchedChar = idx === precedingIdx;
+                return (
+                  <div key={idx} className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-500 mb-0.5">{idx}</span>
+                    <div
+                      className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-bold ${
+                        isMatchedSuffix
+                          ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+                          : isMismatchedChar
+                          ? 'border-rose-400 bg-rose-500/25 text-rose-100'
+                          : 'border-slate-700 bg-slate-950 text-slate-300'
+                      }`}
+                    >
+                      {ch}
+                    </div>
+                    <span className="text-[10px] mt-1 font-semibold">
+                      {isMatchedSuffix ? (
+                        <span className="text-emerald-400">✓ Match</span>
+                      ) : isMismatchedChar ? (
+                        <span className="text-rose-400">✗ Fail</span>
+                      ) : (
+                        <span className="text-transparent">.</span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex-1 min-w-[220px] space-y-1.5 text-xs">
+              <div className="flex items-center gap-2 text-emerald-200">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-400" />
+                <span>
+                  Last <strong>{safeK}</strong> letter{safeK > 1 ? 's' : ''} matched:{' '}
+                  <code className="font-bold text-white bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                    &quot;{suff}&quot;
+                  </code>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-rose-200">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-rose-400" />
+                <span>
+                  Letter right before <code className="text-white">&quot;{suff}&quot;</code> is{' '}
+                  <code className="font-bold text-white bg-rose-500/20 px-1.5 py-0.5 rounded border border-rose-500/30">
+                    &apos;{precedingChar}&apos;
+                  </code>{' '}
+                  (it mismatched, so if we find another <code className="text-white">&quot;{suff}&quot;</code>, it must <strong>NOT</strong> have <code className="text-white">&apos;{precedingChar}&apos;</code> before it).
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Simple 2-Step Check */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Step 1: Full Suffix Match Inside Pattern */}
+          <div
+            className={`rounded-xl border p-3.5 space-y-2.5 ${
+              case1WinnerShift !== null
+                ? 'border-emerald-500/60 bg-emerald-500/10'
+                : 'border-slate-800 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-white">
+                Step 1: Is <span className="font-mono text-emerald-300">&quot;{suff}&quot;</span> found earlier in <span className="font-mono">&quot;{P}&quot;</span>?
+              </span>
+              <span
+                className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-bold ${
+                  case1WinnerShift !== null
+                    ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-500/40'
+                    : 'bg-slate-800 text-slate-400'
+                }`}
+              >
+                {case1WinnerShift !== null ? `✓ Yes! d₂(${safeK}) = ${case1WinnerShift}` : '✗ No → Go to Step 2'}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-300">
+              Search left of <code className="text-emerald-300">&quot;{suff}&quot;</code> for another copy of <code className="text-emerald-300">&quot;{suff}&quot;</code> whose preceding letter is <strong>not</strong> <code className="text-rose-300">&apos;{precedingChar}&apos;</code>:
+            </p>
+
+            {interiorOccurrences.length === 0 ? (
+              <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-400">
+                <code className="text-slate-200">&quot;{suff}&quot;</code> does not appear anywhere else inside <code className="text-slate-200">&quot;{P}&quot;</code>.
+              </div>
+            ) : (
+              <div className="space-y-1.5 font-mono text-xs">
+                {interiorOccurrences.map((occ, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded-lg border p-2.5 ${
+                      occ.valid
+                        ? 'border-emerald-500/40 bg-emerald-950/50 text-emerald-200'
+                        : 'border-rose-500/40 bg-rose-950/40 text-rose-200'
+                    }`}
+                  >
+                    <div className="font-sans">
+                      Found <code>&quot;{suff}&quot;</code> at index <code>{occ.start}</code> (letter before it is{' '}
+                      <code>{occ.charBefore !== null ? `'${occ.charBefore}'` : 'None (Start of Pattern)'}</code>):
+                    </div>
+                    <div className="mt-1 font-bold">
+                      {occ.valid ? (
+                        <span className="text-emerald-300">
+                          ✓ Valid ({occ.charBefore !== null ? `'${occ.charBefore}'` : 'Start'} ≠ &apos;{precedingChar}&apos;) → Shift = {suffixStartIdx} − {occ.start} = {occ.shift}
+                        </span>
+                      ) : (
+                        <span className="text-rose-300">
+                          ✗ Skip (also preceded by &apos;{precedingChar}&apos;, which would fail again)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Step 2: Partial Overlap at the Beginning of Pattern */}
+          <div
+            className={`rounded-xl border p-3.5 space-y-2.5 ${
+              case1WinnerShift === null
+                ? 'border-indigo-500/60 bg-indigo-500/10'
+                : 'border-slate-800 bg-slate-900/40 opacity-60'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-white">
+                Step 2: Does the START of <span className="font-mono">&quot;{P}&quot;</span> match the END of <span className="font-mono text-emerald-300">&quot;{suff}&quot;</span>?
+              </span>
+              <span
+                className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-bold ${
+                  case1WinnerShift !== null
+                    ? 'bg-slate-800 text-slate-400'
+                    : case2WinnerLen > 0
+                    ? 'bg-indigo-500/25 text-indigo-200 border border-indigo-500/40'
+                    : 'bg-amber-500/20 text-amber-200 border border-amber-500/40'
+                }`}
+              >
+                {case1WinnerShift !== null
+                  ? 'Skipped (Step 1 Worked)'
+                  : case2WinnerLen > 0
+                  ? `✓ Overlap = ${case2WinnerLen} → d₂(${safeK}) = ${m - case2WinnerLen}`
+                  : `✗ None → d₂(${safeK}) = ${m}`}
+              </span>
+            </div>
+
+            {case1WinnerShift !== null ? (
+              <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-400">
+                We only use Step 2 when Step 1 finds no valid match. Since Step 1 already gave <code className="text-emerald-300">d₂({safeK}) = {case1WinnerShift}</code>, we are done!
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-slate-300">
+                  Since <code className="text-emerald-300">&quot;{suff}&quot;</code> wasn&apos;t found in Step 1, check if a shorter ending of <code className="text-emerald-300">&quot;{suff}&quot;</code> matches the <strong>start (prefix)</strong> of <code className="text-white">&quot;{P}&quot;</code>:
+                </p>
+
+                {prefixChecks.length === 0 ? (
+                  <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-300">
+                    For <code>k = 1</code>, there is no shorter piece smaller than 1 letter, so we shift the whole pattern: <strong className="text-amber-300">d₂(1) = m = {m}</strong>.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 font-mono text-xs">
+                    {prefixChecks.map((chk) => (
+                      <div
+                        key={chk.len}
+                        className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2 ${
+                          chk.matches
+                            ? 'border-emerald-500/50 bg-emerald-950/50 text-emerald-200'
+                            : 'border-slate-800 bg-slate-950 text-slate-400'
+                        }`}
+                      >
+                        <div>
+                          Start <code className="text-indigo-300">&quot;{chk.prefixStr}&quot;</code> vs End <code className="text-emerald-300">&quot;{chk.tailSuffixStr}&quot;</code>
+                        </div>
+                        <div className="font-bold">
+                          {chk.matches ? (
+                            <span className="text-emerald-300">
+                              ✓ Match ({chk.len} letter{chk.len > 1 ? 's' : ''}) → {m} − {chk.len} = {chk.shift}
+                            </span>
+                          ) : (
+                            <span>✗ Different</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {case2WinnerLen === 0 && (
+                      <div className="rounded-lg border border-amber-500/40 bg-amber-950/30 p-2 text-amber-200 font-sans">
+                        No overlap at the start of <code>&quot;{P}&quot;</code> → Shift full pattern length: <strong>d₂({safeK}) = m = {m}</strong>.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Clean Visual Alignment Showing Why Shift = finalD2 */}
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-3.5 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs font-bold text-emerald-200">
+              Visual Result: Sliding <code className="text-white">&quot;{P}&quot;</code> Right by <code className="text-emerald-300">+{finalD2}</code> Step{finalD2 > 1 ? 's' : ''}
+            </div>
+            <div className="font-mono text-xs font-bold text-white bg-emerald-600/30 border border-emerald-500/50 px-2.5 py-0.5 rounded-md">
+              d₂({safeK}) = {finalD2}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <div className="inline-flex flex-col gap-1.5 font-mono text-xs min-w-max">
+              {/* Row 1: Before Shift */}
+              <div className="flex items-center gap-1">
+                <span className="w-36 text-slate-400 font-sans text-xs">Before Shift:</span>
+                {Array.from({ length: m + finalD2 }, (_, col) => {
+                  if (col >= m) {
+                    return <div key={col} className="w-8 h-8 rounded border border-transparent" />;
+                  }
+                  const isMatchedSuffix = col >= suffixStartIdx;
+                  const isMismatchedChar = col === precedingIdx;
+                  return (
+                    <div
+                      key={col}
+                      className={`w-8 h-8 flex items-center justify-center rounded border font-bold ${
+                        isMatchedSuffix
+                          ? 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+                          : isMismatchedChar
+                          ? 'border-rose-400/60 bg-rose-500/20 text-rose-200'
+                          : 'border-slate-700 bg-slate-900 text-slate-300'
+                      }`}
+                    >
+                      {P[col]}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Row 2: After Shift by +finalD2 */}
+              <div className="flex items-center gap-1">
+                <span className="w-36 text-emerald-300 font-sans text-xs font-semibold">
+                  Shifted +{finalD2} Right:
+                </span>
+                {Array.from({ length: m + finalD2 }, (_, col) => {
+                  const patIdx = col - finalD2;
+                  if (patIdx < 0 || patIdx >= m) {
+                    return (
+                      <div
+                        key={col}
+                        className="w-8 h-8 flex items-center justify-center rounded border border-dashed border-slate-800 text-[10px] text-slate-600"
+                      >
+                        →
+                      </div>
+                    );
+                  }
+                  const alignsWithSuffix = col >= suffixStartIdx && col < m;
+                  return (
+                    <div
+                      key={col}
+                      className={`w-8 h-8 flex items-center justify-center rounded border font-bold ${
+                        alignsWithSuffix
+                          ? 'border-emerald-400 bg-emerald-500/35 text-white ring-1 ring-emerald-400'
+                          : 'border-indigo-500/40 bg-indigo-950/60 text-indigo-200'
+                      }`}
+                    >
+                      {P[patIdx]}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-300">
+            {case1WinnerShift !== null && case1WinnerStart !== null ? (
+              <>
+                Sliding right by <strong>+{finalD2}</strong> moves the earlier <code className="text-emerald-300">&quot;{suff}&quot;</code> (at index {case1WinnerStart}) directly under the matched <code className="text-emerald-300">&quot;{suff}&quot;</code>!
+              </>
+            ) : case2WinnerLen > 0 ? (
+              <>
+                Sliding right by <strong>+{finalD2}</strong> lines up the start <code className="text-emerald-300">&quot;{P.slice(0, case2WinnerLen)}&quot;</code> of the shifted pattern with the end <code className="text-emerald-300">&quot;{P.slice(m - case2WinnerLen)}&quot;</code> of the matched suffix!
+              </>
+            ) : (
+              <>
+                No internal match and no prefix overlap exist, so the pattern slides completely past all <strong>{m}</strong> positions (<strong>+{m}</strong>).
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderVisualTable = (tbl: VisualTable) => {
+    const isBadSymbolTable = tbl.id === 'bm-bad-symbol' || tbl.id === 'horspool-shift-table';
+    const isGoodSuffixTable = tbl.id === 'bm-good-suffix';
+    const patternForSubTrace =
+      currentStep.stringView?.pattern ||
+      (tbl.title.match(/"([^"]+)"/)?.[1] ?? '');
+
+    return (
     <div
       key={tbl.id}
       className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 shadow-sm"
@@ -1088,11 +1908,61 @@ export const TraceView: React.FC<TraceViewProps> = ({
           <h4 className="text-sm font-semibold text-slate-100">{tbl.title}</h4>
           {tbl.subtitle && <p className="text-xs text-slate-400">{tbl.subtitle}</p>}
         </div>
-        {tbl.indexBase && (
-          <span className="rounded-md border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 font-mono text-xs font-medium text-indigo-300">
-            {tbl.indexBase}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {isBadSymbolTable && patternForSubTrace && (
+            <button
+              type="button"
+              onClick={() =>
+                setShowBadSymbolTrace((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setShowGoodSuffixTrace(false);
+                    setIsPlaying(false);
+                  }
+                  return next;
+                })
+              }
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                showBadSymbolTrace
+                  ? 'border-indigo-400 bg-indigo-600 text-white shadow-sm'
+                  : 'border-indigo-500/40 bg-indigo-500/15 text-indigo-200 hover:bg-indigo-500/25'
+              }`}
+            >
+              {showBadSymbolTrace
+                ? '✕ Hide Bad-Symbol Step-by-Step Trace'
+                : '🔍 Trace How Bad-Symbol Table is Built'}
+            </button>
+          )}
+          {isGoodSuffixTable && patternForSubTrace && (
+            <button
+              type="button"
+              onClick={() =>
+                setShowGoodSuffixTrace((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setShowBadSymbolTrace(false);
+                    setIsPlaying(false);
+                  }
+                  return next;
+                })
+              }
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                showGoodSuffixTrace
+                  ? 'border-emerald-400 bg-emerald-600 text-white shadow-sm'
+                  : 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
+              }`}
+            >
+              {showGoodSuffixTrace
+                ? '✕ Hide Good-Suffix Step-by-Step Trace'
+                : '🔍 Trace How Good-Suffix d₂(k) is Found'}
+            </button>
+          )}
+          {tbl.indexBase && (
+            <span className="rounded-md border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 font-mono text-xs font-medium text-indigo-300">
+              {tbl.indexBase}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -1219,8 +2089,19 @@ export const TraceView: React.FC<TraceViewProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Optional Expandable Step-by-Step Sub-Trace for Bad-Symbol Table */}
+      {isBadSymbolTable && showBadSymbolTrace && patternForSubTrace && (
+        renderBadSymbolSubTrace(patternForSubTrace, tbl.colHeaders ?? [])
+      )}
+
+      {/* Optional Expandable Step-by-Step Sub-Trace for Good-Suffix Table */}
+      {isGoodSuffixTable && showGoodSuffixTrace && patternForSubTrace && (
+        renderGoodSuffixSubTrace(patternForSubTrace)
+      )}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -1447,46 +2328,81 @@ export const TraceView: React.FC<TraceViewProps> = ({
             type="button"
             onClick={() => {
               setIsPlaying(false);
-              setCurrentStepIdx(0);
+              if (isBadSymbolTraceActive) {
+                setBadSymbolStepIdx(0);
+              } else if (isGoodSuffixTraceActive) {
+                setGoodSuffixK(1);
+                setGoodSuffixTestShift(null);
+              } else {
+                setCurrentStepIdx(0);
+              }
             }}
-            title="Reset to Step 1"
+            title="Reset to First Step"
             className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-200 hover:bg-slate-700 disabled:opacity-40"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
           <button
             type="button"
-            disabled={safeStepIdx === 0}
+            disabled={
+              isBadSymbolTraceActive
+                ? badSymbolStepIdx <= 0
+                : isGoodSuffixTraceActive
+                ? goodSuffixK <= 1
+                : safeStepIdx === 0
+            }
             onClick={() => {
               setIsPlaying(false);
-              setCurrentStepIdx((p) => Math.max(0, p - 1));
+              if (isBadSymbolTraceActive) {
+                setBadSymbolStepIdx((p) => Math.max(0, p - 1));
+              } else if (isGoodSuffixTraceActive) {
+                setGoodSuffixK((p) => Math.max(1, p - 1));
+                setGoodSuffixTestShift(null);
+              } else {
+                setCurrentStepIdx((p) => Math.max(0, p - 1));
+              }
             }}
-            title="Previous Step"
+            title="Previous Step (Left Arrow ←)"
             className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-200 hover:bg-slate-700 disabled:opacity-40"
           >
             <SkipBack className="h-4 w-4" />
           </button>
+          {!isBadSymbolTraceActive && !isGoodSuffixTraceActive && (
+            <button
+              type="button"
+              onClick={() => {
+                if (safeStepIdx >= steps.length - 1) {
+                  setCurrentStepIdx(0);
+                  setIsPlaying(true);
+                } else {
+                  setIsPlaying((p) => !p);
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {isPlaying ? 'Pause' : 'Play Trace'}
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => {
-              if (safeStepIdx >= steps.length - 1) {
-                setCurrentStepIdx(0);
-                setIsPlaying(true);
-              } else {
-                setIsPlaying((p) => !p);
-              }
-            }}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
-          >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {isPlaying ? 'Pause' : 'Play Trace'}
-          </button>
-          <button
-            type="button"
-            disabled={safeStepIdx >= steps.length - 1}
+            disabled={
+              isBadSymbolTraceActive
+                ? badSymbolStepIdx >= subTraceM
+                : isGoodSuffixTraceActive
+                ? goodSuffixK >= subTraceM - 1
+                : safeStepIdx >= steps.length - 1
+            }
             onClick={() => {
               setIsPlaying(false);
-              setCurrentStepIdx((p) => Math.min(steps.length - 1, p + 1));
+              if (isBadSymbolTraceActive) {
+                setBadSymbolStepIdx((p) => Math.min(subTraceM, p + 1));
+              } else if (isGoodSuffixTraceActive) {
+                setGoodSuffixK((p) => Math.min(subTraceM - 1, p + 1));
+                setGoodSuffixTestShift(null);
+              } else {
+                setCurrentStepIdx((p) => Math.min(steps.length - 1, p + 1));
+              }
             }}
             title="Next Step (Right Arrow →)"
             className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-200 hover:bg-slate-700 disabled:opacity-40"
@@ -1496,26 +2412,67 @@ export const TraceView: React.FC<TraceViewProps> = ({
           <span className="hidden sm:inline-flex items-center gap-1.5 ml-1 px-2.5 py-1 rounded-md border border-slate-700/80 bg-slate-950/80 font-mono text-[11px] text-slate-300">
             <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300 border border-slate-700 font-bold">←</kbd>
             <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300 border border-slate-700 font-bold">→</kbd>
-            <span>Arrow Keys</span>
+            <span>
+              {isBadSymbolTraceActive
+                ? 'Controlling Bad-Symbol Trace'
+                : isGoodSuffixTraceActive
+                ? 'Controlling Good-Suffix Trace'
+                : 'Arrow Keys'}
+            </span>
           </span>
         </div>
 
         {/* Step Scrubber */}
         <div className="flex flex-1 items-center gap-3 px-2">
-          <span className="whitespace-nowrap font-mono text-xs font-semibold text-indigo-300">
-            Step {safeStepIdx + 1} / {steps.length}
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={Math.max(0, steps.length - 1)}
-            value={safeStepIdx}
-            onChange={(e) => {
-              setIsPlaying(false);
-              setCurrentStepIdx(Number(e.target.value));
-            }}
-            className="h-1.5 flex-1 cursor-pointer accent-indigo-500"
-          />
+          {isBadSymbolTraceActive ? (
+            <>
+              <span className="whitespace-nowrap font-mono text-xs font-semibold text-indigo-300">
+                Bad-Symbol Step {badSymbolStepIdx} / {subTraceM}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={Math.max(0, subTraceM)}
+                value={Math.min(badSymbolStepIdx, subTraceM)}
+                onChange={(e) => setBadSymbolStepIdx(Number(e.target.value))}
+                className="h-1.5 flex-1 cursor-pointer accent-indigo-500"
+              />
+            </>
+          ) : isGoodSuffixTraceActive ? (
+            <>
+              <span className="whitespace-nowrap font-mono text-xs font-semibold text-emerald-300">
+                Good-Suffix k = {goodSuffixK} / {subTraceM - 1}
+              </span>
+              <input
+                type="range"
+                min={1}
+                max={Math.max(1, subTraceM - 1)}
+                value={Math.min(Math.max(1, goodSuffixK), subTraceM - 1)}
+                onChange={(e) => {
+                  setGoodSuffixK(Number(e.target.value));
+                  setGoodSuffixTestShift(null);
+                }}
+                className="h-1.5 flex-1 cursor-pointer accent-emerald-500"
+              />
+            </>
+          ) : (
+            <>
+              <span className="whitespace-nowrap font-mono text-xs font-semibold text-indigo-300">
+                Step {safeStepIdx + 1} / {steps.length}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={Math.max(0, steps.length - 1)}
+                value={safeStepIdx}
+                onChange={(e) => {
+                  setIsPlaying(false);
+                  setCurrentStepIdx(Number(e.target.value));
+                }}
+                className="h-1.5 flex-1 cursor-pointer accent-indigo-500"
+              />
+            </>
+          )}
         </div>
 
         {/* Speed Control */}

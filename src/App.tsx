@@ -605,8 +605,8 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {/* Algorithm Header Card (shown in Trace & Analyze modes; Design mode focuses on the 3 Core Paradigms) */}
-            {activePillar !== 'design' && (
+            {/* Algorithm Header Card (shown only in Trace mode; Analyze & Design modes focus on general principles & examples) */}
+            {activePillar === 'trace' && (
               <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900/95 via-slate-900/90 to-indigo-950/30 p-5 shadow-lg space-y-4">
                 {/* Per-Algorithm Syllabus Exclusion / Partial Exclusion Banner */}
                 {currentAlgorithm.syllabusInfo &&
