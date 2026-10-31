@@ -194,7 +194,7 @@ export function generateDistributionCountingV1Steps(inputStr: string): TraceStep
     const cHeaders = Array.from({ length: k + 1 }, (_, idx) => idx);
 
     const cRows: TableCellData[][] = [
-      initC.map((v, idx) => ({
+      initC.map((v) => ({
         value: v,
         state: phase === 'init' ? 'active' : 'computed',
       })),
