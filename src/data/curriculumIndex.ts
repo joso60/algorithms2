@@ -19,7 +19,6 @@ import {
   generateChangeMakingSteps,
   generateCoinCollectingSteps,
   generateKnapsackSteps,
-  generateBinomialSteps,
   generateOBSTSteps,
   generateWarshallSteps,
   generateFloydSteps,
@@ -93,10 +92,6 @@ export const MIDTERM_EXAM_FREQUENCY: Record<
   'knapsack-01': {
     count: 2,
     papers: ['Spring 2021 MidTerm Q3', 'Fall 2025 MidTerm Q4'],
-  },
-  'binomial-coeff': {
-    count: 0,
-    papers: [],
   },
   obst: {
     count: 2,
@@ -181,8 +176,6 @@ export function generateTraceForAlgorithm(
         inputs.values || '25, 20, 15, 40, 50',
         inputs.capacity || '6'
       );
-    case 'binomial-coeff':
-      return generateBinomialSteps(inputs.n || '5', inputs.k || '3');
     case 'obst':
       return generateOBSTSteps(inputs.keys || 'A, B, C, D', inputs.probs || '0.2, 0.1, 0.4, 0.3');
     case 'warshall':
@@ -618,15 +611,6 @@ export function generateRandomExamInputForAlgorithm(id: AlgorithmId): {
           capacity: String(W),
         },
         summaryLabel: `Random Exam 0/1 Knapsack (n = ${n} items, W = ${W}): w=[${weights.join(',')}], v=[${values.join(',')}]`,
-      };
-    }
-
-    case 'binomial-coeff': {
-      const n = randInt(5, 7);
-      const k = randInt(2, Math.min(4, n - 1));
-      return {
-        inputs: { n: String(n), k: String(k) },
-        summaryLabel: `Random Exam Binomial Coefficient: Compute C(${n}, ${k})`,
       };
     }
 

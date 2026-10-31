@@ -21,7 +21,6 @@ export type AlgorithmId =
   | 'change-making'
   | 'coin-collecting'
   | 'knapsack-01'
-  | 'binomial-coeff'
   | 'obst'
   | 'warshall'
   | 'floyd';
@@ -97,6 +96,28 @@ export interface GraphEdgeView {
   highlight?: boolean;
 }
 
+export interface OBSTTreeNodeView {
+  keyIndex: number; // 1..n
+  label: string; // e.g. 'A', 'B', 'C'...
+  role: 'current' | 'left-child' | 'right-child' | 'placed';
+  left?: OBSTTreeNodeView | null;
+  right?: OBSTTreeNodeView | null;
+}
+
+export interface OBSTTreeConstructionView {
+  n: number;
+  keys: string[];
+  rootMatrix: (number | null)[][]; // 1-based R[1..n][1..n]
+  currentCell?: { i: number; j: number; k: number; label: string };
+  leftChildCell?: { i: number; j: number; k: number; label: string } | null;
+  rightChildCell?: { i: number; j: number; k: number; label: string } | null;
+  treeRoot: OBSTTreeNodeView | null;
+  stepCaption: string;
+  treeStepIndex: number; // 1..totalTreeSteps
+  totalTreeSteps: number;
+  expectedCost: number;
+}
+
 export interface TraceStep {
   stepNumber: number;
   codeLine: number; // 1-based line in pseudocode
@@ -106,6 +127,7 @@ export interface TraceStep {
   variables?: Record<string, string | number>;
   tables: VisualTable[];
   stringView?: StringAlignmentView;
+  obstTreeView?: OBSTTreeConstructionView;
   bTreeView?: {
     order: number;
     minKeys: number;

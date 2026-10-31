@@ -22,6 +22,8 @@ import type {
   VisualTable,
   StringAlignmentView,
   BTreeNodeView,
+  OBSTTreeConstructionView,
+  OBSTTreeNodeView,
 } from '../types/algorithm';
 
 interface TraceViewProps {
@@ -111,13 +113,20 @@ export const TraceView: React.FC<TraceViewProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [steps.length, setCurrentStepIdx]);
 
-  // In "Test Yourself" practice mode, jump to final step so all editable exam cells are ready
+  // In "Test Yourself" practice mode, jump to last step that has editable tables
   const handleTogglePracticeMode = () => {
     const nextMode = !practiceMode;
     setPracticeMode(nextMode);
     setIsPlaying(false);
     if (nextMode) {
-      setCurrentStepIdx(steps.length - 1);
+      let targetIdx = steps.length - 1;
+      for (let idx = steps.length - 1; idx >= 0; idx--) {
+        if (steps[idx].tables && steps[idx].tables.length > 0) {
+          targetIdx = idx;
+          break;
+        }
+      }
+      setCurrentStepIdx(targetIdx);
       setUserAnswers({});
       setCheckedPractice(false);
     }
@@ -635,6 +644,440 @@ export const TraceView: React.FC<TraceViewProps> = ({
     );
   };
 
+  const renderOBSTTreeConstructionView = (view: OBSTTreeConstructionView) => {
+    const {
+      n,
+      keys,
+      rootMatrix,
+      currentCell,
+      leftChildCell,
+      rightChildCell,
+      treeRoot,
+      stepCaption,
+      treeStepIndex,
+      totalTreeSteps,
+      expectedCost,
+    } = view;
+
+    // Compute 2D layout for the binary tree SVG
+    interface PositionedOBSTNode {
+      keyIndex: number;
+      label: string;
+      role: OBSTTreeNodeView['role'];
+      x: number;
+      y: number;
+      parentX?: number;
+      parentY?: number;
+    }
+
+    const positionedNodes: PositionedOBSTNode[] = [];
+    const getMaxDepth = (node: OBSTTreeNodeView | null | undefined): number => {
+      if (!node) return 0;
+      return 1 + Math.max(getMaxDepth(node.left), getMaxDepth(node.right));
+    };
+
+    const maxDepth = Math.max(1, getMaxDepth(treeRoot));
+    const svgWidth = Math.max(360, n * 62);
+    const levelGapY = 68;
+    const svgHeight = Math.max(230, maxDepth * levelGapY + 40);
+
+    const assignCoords = (
+      node: OBSTTreeNodeView | null | undefined,
+      depth: number,
+      xMin: number,
+      xMax: number,
+      parentX?: number,
+      parentY?: number
+    ) => {
+      if (!node) return;
+      const x = (xMin + xMax) / 2;
+      const y = 36 + depth * levelGapY;
+      positionedNodes.push({
+        keyIndex: node.keyIndex,
+        label: node.label,
+        role: node.role,
+        x,
+        y,
+        parentX,
+        parentY,
+      });
+      const spread = (xMax - xMin) / 2;
+      if (node.left) {
+        assignCoords(node.left, depth + 1, xMin, x, x, y);
+      }
+      if (node.right) {
+        assignCoords(node.right, depth + 1, x, x + spread, x, y);
+      }
+    };
+
+    if (treeRoot) {
+      assignCoords(treeRoot, 0, 24, svgWidth - 24);
+    }
+
+    // Find the first tree construction step index so we can step within tree phase or back to tables
+    const firstTreeStepGlobalIdx = steps.findIndex((s) => Boolean(s.obstTreeView));
+
+    return (
+      <div className="rounded-2xl border border-slate-800 bg-[#111318] p-5 sm:p-6 shadow-2xl space-y-6">
+        {/* Top Header Banner */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/90 pb-3.5">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-[#7c6df2]/20 border border-[#7c6df2]/50 px-2.5 py-0.5 font-mono text-xs font-bold text-[#c4b5fd]">
+                Tree Step {treeStepIndex} of {totalTreeSteps}
+              </span>
+              <h4 className="text-sm sm:text-base font-bold text-white">
+                Step-by-Step Optimal BST Construction from Root Table R[1..{n}, 1..{n}]
+              </h4>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Cost Table C is hidden so we can focus on extracting the Optimal Binary Search Tree from R (Min Expected Cost = <strong className="text-emerald-300 font-mono">{expectedCost}</strong>).
+            </p>
+          </div>
+
+          {firstTreeStepGlobalIdx > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlaying(false);
+                setCurrentStepIdx(firstTreeStepGlobalIdx - 1);
+              }}
+              className="rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-mono text-slate-300 transition cursor-pointer"
+            >
+              ↖ View Completed C &amp; R Tables
+            </button>
+          )}
+        </div>
+
+        {/* Main Side-by-Side Layout: Left = Root Matrix R[1..n, 1..n], Right = Binary Search Tree */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          {/* Left: Clean Root Matrix R[1..n, 1..n] */}
+          <div className="lg:col-span-6 overflow-x-auto flex justify-center">
+            <table className="border-separate border-spacing-1.5 font-mono text-sm">
+              <thead>
+                <tr>
+                  <th className="px-2 py-1 text-slate-500 font-normal text-xs" />
+                  {Array.from({ length: n }, (_, idx) => {
+                    const j = idx + 1;
+                    return (
+                      <th
+                        key={j}
+                        className="px-2.5 py-1 text-center font-normal text-xs text-slate-400"
+                      >
+                        j={j}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: n }, (_, rIdx) => {
+                  const i = rIdx + 1;
+                  return (
+                    <tr key={i}>
+                      <td className="px-2.5 py-1.5 text-right text-xs text-slate-400 whitespace-nowrap">
+                        i={i}
+                      </td>
+                      {Array.from({ length: n }, (__, cIdx) => {
+                        const j = cIdx + 1;
+                        if (j < i) {
+                          return <td key={j} className="w-11 h-11" />;
+                        }
+
+                        const val = rootMatrix[i]?.[j];
+                        const isCurrent =
+                          currentCell !== undefined &&
+                          currentCell.i === i &&
+                          currentCell.j === j;
+                        const isLeftChild =
+                          leftChildCell !== null &&
+                          leftChildCell !== undefined &&
+                          leftChildCell.i === i &&
+                          leftChildCell.j === j;
+                        const isRightChild =
+                          rightChildCell !== null &&
+                          rightChildCell !== undefined &&
+                          rightChildCell.i === i &&
+                          rightChildCell.j === j;
+
+                        // Horizontal trail along same row i between leftChildCell.j and currentCell.j
+                        const isLeftTrail =
+                          currentCell !== undefined &&
+                          leftChildCell !== null &&
+                          leftChildCell !== undefined &&
+                          i === currentCell.i &&
+                          j > leftChildCell.j &&
+                          j < currentCell.j;
+
+                        // Vertical trail along same column j between currentCell.i and rightChildCell.i
+                        const isRightTrail =
+                          currentCell !== undefined &&
+                          rightChildCell !== null &&
+                          rightChildCell !== undefined &&
+                          j === currentCell.j &&
+                          i > currentCell.i &&
+                          i < rightChildCell.i;
+
+                        let cellStyle =
+                          'text-slate-200 bg-transparent hover:bg-slate-800/50';
+                        if (isCurrent) {
+                          cellStyle =
+                            'bg-[#7c6df2] text-white font-bold shadow-md ring-2 ring-[#a78bfa]/60';
+                        } else if (isLeftChild) {
+                          cellStyle =
+                            'bg-[#16a36a] text-white font-bold shadow-md ring-2 ring-[#34d399]/60';
+                        } else if (isRightChild) {
+                          cellStyle =
+                            'bg-[#d95f2a] text-white font-bold shadow-md ring-2 ring-[#fb923c]/60';
+                        } else if (isLeftTrail) {
+                          cellStyle =
+                            'bg-[#dcfce7] text-[#065f46] font-bold';
+                        } else if (isRightTrail) {
+                          cellStyle =
+                            'bg-[#ffedd5] text-[#7c2d12] font-bold';
+                        }
+
+                        const keyLabel = val !== null && val !== undefined ? keys[val - 1] : '';
+
+                        return (
+                          <td
+                            key={j}
+                            title={
+                              val
+                                ? `R[${i}, ${j}] = ${val} (${keyLabel})`
+                                : undefined
+                            }
+                            className={`w-11 h-11 rounded-md text-center align-middle transition-all duration-200 select-none ${cellStyle}`}
+                          >
+                            <div className="flex flex-col items-center justify-center leading-tight">
+                              <span className="text-sm">{val ?? ''}</span>
+                              {keyLabel && (
+                                <span
+                                  className={`text-[9px] ${
+                                    isLeftTrail
+                                      ? 'text-[#065f46]/80'
+                                      : isRightTrail
+                                      ? 'text-[#7c2d12]/80'
+                                      : isCurrent || isLeftChild || isRightChild
+                                      ? 'text-white/90'
+                                      : 'text-slate-500'
+                                  }`}
+                                >
+                                  {keyLabel}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Right: Binary Search Tree SVG Diagram */}
+          <div className="lg:col-span-6 flex justify-center items-center overflow-x-auto">
+            <svg
+              width={svgWidth}
+              height={svgHeight}
+              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+              className="overflow-visible"
+            >
+              {/* Connecting Edges */}
+              {positionedNodes.map((node) => {
+                if (node.parentX === undefined || node.parentY === undefined) return null;
+                return (
+                  <line
+                    key={`edge-${node.keyIndex}`}
+                    x1={node.parentX}
+                    y1={node.parentY}
+                    x2={node.x}
+                    y2={node.y}
+                    stroke="#64748b"
+                    strokeWidth={2}
+                  />
+                );
+              })}
+
+              {/* Circular Tree Nodes */}
+              {positionedNodes.map((node) => {
+                let fill = '#18181b';
+                let stroke = '#3f3f46';
+                if (node.role === 'current') {
+                  fill = '#7c6df2';
+                  stroke = '#a78bfa';
+                } else if (node.role === 'left-child') {
+                  fill = '#16a36a';
+                  stroke = '#34d399';
+                } else if (node.role === 'right-child') {
+                  fill = '#d95f2a';
+                  stroke = '#fb923c';
+                }
+
+                return (
+                  <g key={`node-${node.keyIndex}`} transform={`translate(${node.x}, ${node.y})`}>
+                    <circle
+                      r={22}
+                      fill={fill}
+                      stroke={stroke}
+                      strokeWidth={2}
+                      className="transition-all duration-300"
+                    />
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="#ffffff"
+                      className="font-sans text-sm font-bold select-none"
+                    >
+                      {node.label}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        </div>
+
+        {/* Integrated Diagram Color Legend (Part of the Visual Diagram) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 rounded bg-[#7c6df2] inline-block shrink-0 ring-1 ring-white/20" />
+            <span>
+              <strong className="text-white">Purple:</strong> Current cell <code>R[i, j] = k</code> (parent node)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 rounded bg-[#16a36a] inline-block shrink-0 ring-1 ring-white/20" />
+            <span>
+              <strong className="text-white">Dark Green:</strong> Left child cell <code>R[i, k−1]</code> (same row <code>i</code>, col <code>k−1</code>)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 rounded bg-[#d95f2a] inline-block shrink-0 ring-1 ring-white/20" />
+            <span>
+              <strong className="text-white">Dark Orange:</strong> Right child cell <code>R[k+1, j]</code> (row <code>k+1</code>, same col <code>j</code>)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 rounded bg-[#dcfce7] border border-emerald-500/50 inline-block shrink-0" />
+            <span>
+              <strong className="text-emerald-200">Pale Mint (Light Green):</strong> Visual path moving <strong>left</strong> along row <code>i</code> to reach <code>R[i, k−1]</code> (skipped cells, not chosen)
+            </span>
+          </div>
+          <div className="flex items-center gap-2 sm:col-span-2">
+            <span className="w-4 h-4 rounded bg-[#ffedd5] border border-orange-500/50 inline-block shrink-0" />
+            <span>
+              <strong className="text-orange-200">Pale Peach (Light Orange):</strong> Visual path moving <strong>down</strong> along column <code>j</code> to reach <code>R[k+1, j]</code> (skipped cells, not chosen)
+            </span>
+          </div>
+        </div>
+
+        {/* Step Caption, Navigation Controls & Optional Detailed Step Breakdown Below */}
+        <div className="space-y-4 pt-3 border-t border-slate-800/80">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm sm:text-base text-slate-100 font-semibold tracking-tight">
+              {stepCaption}
+            </div>
+
+            {/* Step Navigation Buttons */}
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                disabled={safeStepIdx <= 0}
+                onClick={() => {
+                  setIsPlaying(false);
+                  setCurrentStepIdx((p) => Math.max(0, p - 1));
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-xs font-semibold text-slate-100 transition cursor-pointer"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                disabled={safeStepIdx >= steps.length - 1}
+                onClick={() => {
+                  setIsPlaying(false);
+                  setCurrentStepIdx((p) => Math.min(steps.length - 1, p + 1));
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-xs font-semibold text-slate-100 transition cursor-pointer"
+              >
+                Next →
+              </button>
+              <span className="text-xs font-mono text-slate-400 ml-1">
+                Tree Step {treeStepIndex} of {totalTreeSteps}
+              </span>
+            </div>
+          </div>
+
+          {/* Optional Detailed Step Breakdown (At the Bottom for Students Who Want Full Formula Details) */}
+          {currentCell && (
+            <div className="rounded-xl border border-slate-800 bg-slate-950/90 p-3.5 space-y-2 font-mono text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                <span className="font-bold uppercase tracking-wider text-indigo-300">
+                  📐 Detailed Step Formula Breakdown — OBST Tree Lookup Rule (Given R[i, j] = k):
+                </span>
+                <span className="text-slate-400">
+                  Stop condition: if row &gt; column (i &gt; j), the child is empty (∅)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                {/* 1. Current Cell k */}
+                <div className="rounded-lg border border-[#7c6df2]/40 bg-[#7c6df2]/10 p-2.5">
+                  <div className="text-[10px] uppercase text-[#c4b5fd] font-bold">
+                    1. Current Cell (Parent Node)
+                  </div>
+                  <div className="mt-1 text-white font-bold">
+                    i = {currentCell.i}, j = {currentCell.j}  ⇒  k = R[{currentCell.i}, {currentCell.j}] = {currentCell.k} ({currentCell.label})
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-slate-300 font-sans">
+                    <code>k = {currentCell.k}</code> is the value stored inside cell <code>R[{currentCell.i}, {currentCell.j}]</code>.
+                  </div>
+                </div>
+
+                {/* 2. Left Child Formula: R[i, k - 1] */}
+                <div className="rounded-lg border border-[#16a36a]/40 bg-[#16a36a]/10 p-2.5">
+                  <div className="text-[10px] uppercase text-emerald-300 font-bold">
+                    2. Left Child Formula: R[i, k − 1]
+                  </div>
+                  <div className="mt-1 text-white font-bold">
+                    R[{currentCell.i}, {currentCell.k} − 1] = R[{currentCell.i}, {currentCell.k - 1}]{' '}
+                    {leftChildCell
+                      ? `= ${leftChildCell.k} (${leftChildCell.label})`
+                      : '→ ∅ (Empty)'}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-slate-300 font-sans">
+                    Stay on <strong>same row i = {currentCell.i}</strong>, move left to <strong>column k − 1 = {currentCell.k - 1}</strong>
+                    {!leftChildCell && ` (since row ${currentCell.i} > col ${currentCell.k - 1}, no left child)`}.
+                  </div>
+                </div>
+
+                {/* 3. Right Child Formula: R[k + 1, j] */}
+                <div className="rounded-lg border border-[#d95f2a]/40 bg-[#d95f2a]/10 p-2.5">
+                  <div className="text-[10px] uppercase text-orange-300 font-bold">
+                    3. Right Child Formula: R[k + 1, j]
+                  </div>
+                  <div className="mt-1 text-white font-bold">
+                    R[{currentCell.k} + 1, {currentCell.j}] = R[{currentCell.k + 1}, {currentCell.j}]{' '}
+                    {rightChildCell
+                      ? `= ${rightChildCell.k} (${rightChildCell.label})`
+                      : '→ ∅ (Empty)'}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-slate-300 font-sans">
+                    Move down to <strong>row k + 1 = {currentCell.k + 1}</strong>, stay on <strong>same column j = {currentCell.j}</strong>
+                    {!rightChildCell && ` (since row ${currentCell.k + 1} > col ${currentCell.j}, no right child)`}.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderVisualTable = (tbl: VisualTable) => (
     <div
       key={tbl.id}
@@ -1104,7 +1547,10 @@ export const TraceView: React.FC<TraceViewProps> = ({
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
           {/* Left 8 Columns: Narration + Tables/Visuals */}
           <div className="space-y-5 xl:col-span-8">
-            {/* Live Step Explanation Card */}
+            {/* OBST Step-by-Step Tree Construction View (Root Matrix + Binary Tree + Integrated Color Legend FIRST at the top) */}
+            {currentStep.obstTreeView && renderOBSTTreeConstructionView(currentStep.obstTreeView)}
+
+            {/* Live Step Explanation Card (Rendered below the OBST tree diagram during tree construction, or at top for regular table steps) */}
             <div className="rounded-xl border border-indigo-500/30 bg-slate-900/95 p-4 shadow-md">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -1147,6 +1593,28 @@ export const TraceView: React.FC<TraceViewProps> = ({
 
             {/* String Alignment View (Brute Force, Horspool, Boyer-Moore) */}
             {currentStep.stringView && renderStringAlignment(currentStep.stringView)}
+
+            {/* OBST Quick Jump to Tree Construction Phase */}
+            {algorithm.id === 'obst' && !currentStep.obstTreeView && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#7c6df2]/40 bg-[#7c6df2]/10 px-4 py-3">
+                <div className="text-xs text-slate-200">
+                  <strong className="text-[#c4b5fd]">Phase 1 (Diagonal Table Filling):</strong> Fill Cost Table <code>C</code> and Root Table <code>R</code>, or jump directly to <strong>Phase 2 (Step-by-Step Tree Construction from Root Table R)</strong>.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstTreeIdx = steps.findIndex((s) => Boolean(s.obstTreeView));
+                    if (firstTreeIdx >= 0) {
+                      setIsPlaying(false);
+                      setCurrentStepIdx(firstTreeIdx);
+                    }
+                  }}
+                  className="rounded-lg bg-[#7c6df2] hover:bg-[#6d5ce7] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition cursor-pointer"
+                >
+                  Skip to Tree Construction (Step 1 of Tree) →
+                </button>
+              </div>
+            )}
 
             {/* B-Tree / OBST Tree View */}
             {currentStep.bTreeView && (

@@ -1092,131 +1092,7 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
   },
 
   // ==========================================================================
-  // 15. BINOMIAL COEFFICIENT
-  // ==========================================================================
-  {
-    id: 'binomial-coeff',
-    title: 'Binomial Coefficient C(n, k)',
-    shortTitle: 'Binomial Coefficient',
-    lectureFile: '01/12-CPCS 324 - Dynamic Programming (Binomial Coefficient)',
-    category: 'dynamic-programming',
-    categoryLabel: 'Module 3: Dynamic Programming',
-    indexingRule: '0-based Pascal Triangle table C[0..n, 0..k]',
-    summary:
-      'Computes the binomial coefficient C(n, k) ("n choose k") using Pascal’s recurrence C[i, j] = C[i - 1, j - 1] + C[i - 1, j] with base cases C[i, 0] = C[i, i] = 1.',
-    pseudocodeTitle: 'Algorithm: Binomial(n, k)',
-    pseudocodeLines: [
-      '// Computes C(n, k) by Dynamic Programming',
-      'for i ← 0 to n do',
-      '    for j ← 0 to min(i, k) do',
-      '        if j = 0 or j = i then',
-      '            C[i, j] ← 1',
-      '        else',
-      '            C[i, j] ← C[i - 1, j - 1] + C[i - 1, j]',
-      'return C[n, k]',
-    ],
-    examples: [
-      {
-        id: 'bin-5-3',
-        name: 'Standard Slide Example: C(5, 3) = 10',
-        badge: 'Slide Example',
-        description: 'Computes Pascal’s triangle up to row 5, column 3.',
-        inputSummary: 'n = 5, k = 3 ➔ C(5, 3) = 10',
-        customInputDefaults: { n: '5', k: '3' },
-      },
-      {
-        id: 'bin-6-4',
-        name: 'Practice Example: C(6, 4) = 15',
-        badge: 'Standard Case',
-        description: 'Computes C(6, 4) = 15.',
-        inputSummary: 'n = 6, k = 4 ➔ C(6, 4) = 15',
-        customInputDefaults: { n: '6', k: '4' },
-      },
-      {
-        id: 'bin-edge',
-        name: 'Boundary Case: C(6, 6) = 1',
-        badge: 'Edge Case',
-        description: 'Full triangle up to diagonal j = i.',
-        inputSummary: 'n = 6, k = 6 ➔ C(6, 6) = 1',
-        customInputDefaults: { n: '6', k: '6' },
-      },
-    ],
-    customFields: [
-      {
-        key: 'n',
-        label: 'n (Total items)',
-        placeholder: '5',
-        helpText: 'Enter integer n (1..10).',
-      },
-      {
-        key: 'k',
-        label: 'k (Chosen items, 0 ≤ k ≤ n)',
-        placeholder: '3',
-        helpText: 'Enter integer k (0..n).',
-      },
-    ],
-    designParadigmName: 'Dynamic Programming (Pascal’s Triangle Recurrence)',
-    designSteps: [
-      {
-        stepNumber: 1,
-        title: 'Recurrence & Base Cases',
-        subtitle: 'Avoiding Factorial Overflow & Exponential Recursion',
-        content: [
-          'Every subset of size j from i elements either includes the i-th element (leaving j - 1 to choose from i - 1) or excludes it (leaving j to choose from i - 1).',
-          'Notice the inner loop stops at `min(i, k)`—we never compute columns beyond k or above the main diagonal i!',
-        ],
-        formulaBox:
-          'C(i, 0) = C(i, i) = 1\nC(i, j) = C(i - 1, j - 1) + C(i - 1, j)   for 0 < j < i',
-      },
-    ],
-    designChallenge: {
-      scenarioTitle: 'Exam Check: Summation Split for Binomial(n, k)',
-      problemStatement:
-        'Why do we split the outer summation into two parts (i = 1 to k and i = k+1 to n) when analyzing Binomial(n, k)?',
-      questions: [
-        {
-          prompt: 'What is the upper bound of the inner j-loop when i ≤ k versus when i > k?',
-          options: [
-            'When i ≤ k, min(i, k) = i (triangle part); when i > k, min(i, k) = k (rectangle part)',
-            'It always runs from 0 to n',
-            'It always runs from 1 to k',
-          ],
-          correctIndex: 0,
-          explanation:
-            'Because the inner loop runs to min(i, k), rows 1..k form a triangle of size k(k-1)/2 additions, while rows k+1..n form a rectangle of k(n - k) additions.',
-        },
-      ],
-    },
-    analysis: {
-      bestTime: 'Θ(nk)',
-      avgTime: 'Θ(nk)',
-      worstTime: 'Θ(nk)',
-      extraSpace: 'Θ(nk) [Table C[0..n, 0..k]]',
-      tradeOffSummary: 'Uses an (n+1)×(k+1) table to compute C(n, k) in Θ(nk) additions instead of 2C(n,k) - 1 recursive calls.',
-      basicOperation: 'Addition (C[i - 1, j - 1] + C[i - 1, j])',
-      inputSizeParam: 'n, k (where 0 ≤ k ≤ n)',
-      summationSteps: [
-        {
-          label: '1. Split summation into Triangle (i ≤ k) and Rectangle (i > k)',
-          math: 'A(n, k) = ∑_{i=1}^{k} ∑_{j=1}^{i-1} 1 + ∑_{i=k+1}^{n} ∑_{j=1}^{k} 1',
-          note: 'Additions only occur on interior cells (1 ≤ j < i and j ≤ k).',
-        },
-        {
-          label: '2. Evaluate both summations',
-          math: '= ∑_{i=1}^{k} (i - 1) + ∑_{i=k+1}^{n} k = [k(k - 1)] / 2 + k(n - k)',
-          note: 'Triangle part + Rectangle part.',
-        },
-        {
-          label: '3. Asymptotic Complexity Class',
-          math: '= nk - ½k² - ½k ∈ Θ(nk)',
-          note: 'Exact Levitin derivation.',
-        },
-      ],
-    },
-  },
-
-  // ==========================================================================
-  // 16. OPTIMAL BINARY SEARCH TREE (OBST)
+  // 15. OPTIMAL BINARY SEARCH TREE (OBST)
   // ==========================================================================
   {
     id: 'obst',
@@ -1227,7 +1103,7 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     categoryLabel: 'Module 3: Dynamic Programming',
     indexingRule: 'Rows i = 1..n+1, Columns j = 0..n (C[i, i-1] = 0, C[i, i] = pᵢ, R[i, i] = i)',
     summary:
-      'Constructs a Binary Search Tree for keys a₁ < a₂ < ... < aₙ with known search probabilities p₁..pₙ that minimizes the expected number of comparisons in a search. Fills cost table C[1..n+1, 0..n] and root table R[1..n+1, 0..n] diagonally.',
+      'Constructs a Binary Search Tree for keys a₁ < a₂ < ... < aₙ with known search probabilities p₁..pₙ that minimizes the expected number of comparisons in a search. Fills cost table C[1..n+1, 0..n] and root table R[1..n+1, 0..n] diagonally, then builds the Optimal BST step-by-step from R.',
     pseudocodeTitle: 'Algorithm: OptimalBST(P[1..n])',
     pseudocodeLines: [
       'for i ← 1 to n do',
@@ -1271,14 +1147,14 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
         },
       },
       {
-        id: 'obst-uniform',
-        name: 'Uniform Probabilities Edge Case (p = [0.25, 0.25, 0.25, 0.25])',
-        badge: 'Edge Case',
-        description: 'Equal search probabilities across all 4 keys.',
-        inputSummary: 'Keys = [K1, K2, K3, K4], Prob = [0.25, 0.25, 0.25, 0.25]',
+        id: 'obst-7-keys',
+        name: '7-Key Deep Tree Trace (Keys A..G, Multi-Level Root Table Practice)',
+        badge: 'Standard Case',
+        description: '7-key example (A, B, C, D, E, F, G) ideal for practicing multi-step OBST tree extraction from Root Table R[1..7, 1..7]!',
+        inputSummary: 'Keys = [A, B, C, D, E, F, G], Prob = [0.22, 0.05, 0.15, 0.05, 0.35, 0.03, 0.15]',
         customInputDefaults: {
-          keys: 'K1, K2, K3, K4',
-          probs: '0.25, 0.25, 0.25, 0.25',
+          keys: 'A, B, C, D, E, F, G',
+          probs: '0.22, 0.05, 0.15, 0.05, 0.35, 0.03, 0.15',
         },
       },
     ],

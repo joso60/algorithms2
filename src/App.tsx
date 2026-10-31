@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [selectedAlgId, setSelectedAlgId] = useState<AlgorithmId>('distribution-counting-sort-v1');
+  const [selectedAlgId, setSelectedAlgId] = useState<AlgorithmId>('obst');
   const [activePillar, setActivePillar] = useState<PillarMode>('trace');
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');

@@ -1,4 +1,8 @@
-import type { TraceStep, VisualTable, BTreeNodeView } from '../types/algorithm';
+import type {
+  TraceStep,
+  VisualTable,
+  OBSTTreeNodeView,
+} from '../types/algorithm';
 
 // ============================================================================
 // 8. ASSEMBLY LINE SCHEDULING (Tables f1, f2 and l1, l2 + Optimal Path)
@@ -979,75 +983,7 @@ export function generateKnapsackSteps(weightsStr: string, valuesStr: string, cap
 }
 
 // ============================================================================
-// 15. BINOMIAL COEFFICIENT (Pascal's Triangle C[0..n, 0..k])
-// ============================================================================
-export function generateBinomialSteps(nStr: string, kStr: string): TraceStep[] {
-  const n = Math.max(1, Math.min(10, Number(nStr) || 5));
-  const k = Math.max(0, Math.min(n, Number(kStr) || 3));
-
-  const C: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(null));
-  const steps: TraceStep[] = [];
-
-  const buildBinomTable = (activeI?: number, activeJ?: number): VisualTable[] => [
-    {
-      id: 'binom-table',
-      title: `Binomial Coefficient Table C[0..${n}, 0..${k}] for C(${n}, ${k})`,
-      subtitle: 'Recurrence: C[i, j] = 1 if j == 0 or j == i; else C[i - 1, j - 1] + C[i - 1, j]',
-      colHeaders: Array.from({ length: k + 1 }, (_, j) => `j = ${j}`),
-      rowHeaders: Array.from({ length: n + 1 }, (_, i) => `i = ${i}`),
-      rows: Array.from({ length: n + 1 }, (_, i) =>
-        Array.from({ length: k + 1 }, (__, j) => {
-          if (j > i) return { value: '—', state: 'unvisited' as const };
-          const val = C[i][j];
-          const isTarget = i === activeI && j === activeJ;
-          const isDep = activeI !== undefined && activeJ !== undefined && i === activeI - 1 && (j === activeJ - 1 || j === activeJ);
-          return {
-            value: val === null ? '' : val,
-            state: isTarget ? 'match' : isDep ? 'compare' : val !== null ? 'computed' : 'unvisited',
-            editableKey: val !== null && j > 0 && j < i ? `binom-${i}-${j}` : undefined,
-            expectedValue: val ?? '',
-            mistakeExplanation: `C[${i},${j}] = C[${i - 1},${j - 1}] + C[${i - 1},${j}] = ${val}.`,
-          };
-        })
-      ),
-      indexBase: '0-based C[0..n, 0..k]',
-    },
-  ];
-
-  for (let i = 0; i <= n; i++) {
-    const upperJ = Math.min(i, k);
-    for (let j = 0; j <= upperJ; j++) {
-      if (j === 0 || j === i) {
-        C[i][j] = 1;
-      } else {
-        C[i][j] = (C[i - 1][j - 1] as number) + (C[i - 1][j] as number);
-      }
-
-      if (i === 0 || (j > 0 && j < i) || (i === n && j === k)) {
-        steps.push({
-          stepNumber: steps.length + 1,
-          codeLine: j === 0 || j === i ? 5 : 6,
-          title: `Compute C[${i}, ${j}] = ${C[i][j]}`,
-          explanation:
-            j === 0 || j === i
-              ? `Base case (j = 0 or j = i): C[${i}, ${j}] = 1.`
-              : `Add top-left C[${i - 1}, ${j - 1}] (${C[i - 1][j - 1]}) + top C[${i - 1}, ${j}] (${C[i - 1][j]}) = ${C[i][j]}.`,
-          formula:
-            j === 0 || j === i
-              ? `C[${i}, ${j}] = 1`
-              : `C[${i}, ${j}] = C[${i - 1}, ${j - 1}] + C[${i - 1}, ${j}] = ${C[i - 1][j - 1]} + ${C[i - 1][j]} = ${C[i][j]}`,
-          variables: { i, j, 'C[i,j]': C[i][j]! },
-          tables: buildBinomTable(i, j),
-        });
-      }
-    }
-  }
-
-  return steps;
-}
-
-// ============================================================================
-// 16. OPTIMAL BINARY SEARCH TREE (OBST: C[1..n+1, 0..n] & R[1..n+1, 0..n])
+// 15. OPTIMAL BINARY SEARCH TREE (OBST: C[1..n+1, 0..n] & R[1..n+1, 0..n])
 // ============================================================================
 export function generateOBSTSteps(keysStr: string, probsStr: string): TraceStep[] {
   const keys = keysStr
@@ -1181,42 +1117,229 @@ export function generateOBSTSteps(keysStr: string, probsStr: string): TraceStep[
     }
   }
 
-  // Construct Optimal BST recursively from R[1..n]
-  const buildBSTView = (i: number, j: number): BTreeNodeView | null => {
+  // ============================================================================
+  // PHASE 2: STEP-BY-STEP TREE CONSTRUCTION FROM ROOT TABLE R[1..n, 1..n]
+  //          (Hides unused Cost Table C and focuses on Root Table R + Binary Tree)
+  // ============================================================================
+  const rootMatrixCopy: (number | null)[][] = R.map((row) => [...row]);
+
+  const buildPartialTree = (
+    i: number,
+    j: number,
+    visibleKeys: Set<number>,
+    currentK?: number,
+    leftK?: number,
+    rightK?: number
+  ): OBSTTreeNodeView | null => {
     if (i > j) return null;
     const k = R[i][j] as number;
-    const leftChild = buildBSTView(i, k - 1);
-    const rightChild = buildBSTView(k + 1, j);
-    const children: BTreeNodeView[] = [];
-    if (leftChild) children.push({ ...leftChild, keys: [`L: ${leftChild.keys[0]}`] });
-    if (rightChild) children.push({ ...rightChild, keys: [`R: ${rightChild.keys[0]}`] });
+    if (!visibleKeys.has(k)) return null;
+
+    const role: OBSTTreeNodeView['role'] =
+      k === currentK
+        ? 'current'
+        : k === leftK
+          ? 'left-child'
+          : k === rightK
+            ? 'right-child'
+            : 'placed';
+
     return {
-      id: `obst-${i}-${j}`,
-      keys: [`${keys[k - 1]} (k=${k})`],
-      highlight: i === 1 && j === n ? 'active' : 'found',
-      children: children.length > 0 ? children : undefined,
+      keyIndex: k,
+      label: keys[k - 1],
+      role,
+      left: buildPartialTree(i, k - 1, visibleKeys, currentK, leftK, rightK),
+      right: buildPartialTree(k + 1, j, visibleKeys, currentK, leftK, rightK),
     };
   };
 
-  const obstRoot = buildBSTView(1, n);
+  // Pre-calculate BFS expansion steps for all multi-key subtrees (i < j)
+  const bfsQueue: { i: number; j: number }[] = [];
+  if (n >= 1) {
+    bfsQueue.push({ i: 1, j: n });
+  }
+
+  interface ExpansionRecord {
+    i: number;
+    j: number;
+    k: number;
+    kLabel: string;
+    leftChildCell: { i: number; j: number; k: number; label: string } | null;
+    rightChildCell: { i: number; j: number; k: number; label: string } | null;
+    visibleSnapshot: Set<number>;
+    caption: string;
+    explanation: string;
+    formula: string;
+  }
+
+  const expansionRecords: ExpansionRecord[] = [];
+  const visibleKeys = new Set<number>();
+  if (R[1][n] !== null) {
+    visibleKeys.add(R[1][n] as number);
+  }
+
+  while (bfsQueue.length > 0) {
+    const { i, j } = bfsQueue.shift()!;
+    const k = R[i][j] as number;
+    const kLabel = keys[k - 1];
+    visibleKeys.add(k);
+
+    let leftChildCell: { i: number; j: number; k: number; label: string } | null = null;
+    if (i <= k - 1) {
+      const lk = R[i][k - 1] as number;
+      leftChildCell = { i, j: k - 1, k: lk, label: keys[lk - 1] };
+      visibleKeys.add(lk);
+      if (i < k - 1) {
+        bfsQueue.push({ i, j: k - 1 });
+      }
+    }
+
+    let rightChildCell: { i: number; j: number; k: number; label: string } | null = null;
+    if (k + 1 <= j) {
+      const rk = R[k + 1][j] as number;
+      rightChildCell = { i: k + 1, j, k: rk, label: keys[rk - 1] };
+      visibleKeys.add(rk);
+      if (k + 1 < j) {
+        bfsQueue.push({ i: k + 1, j });
+      }
+    }
+
+    const leftText = leftChildCell
+      ? `row ${leftChildCell.i}, column ${leftChildCell.j} → ${leftChildCell.label}`
+      : `none (column k−1 = ${k - 1} < row i = ${i})`;
+    const rightText = rightChildCell
+      ? `row ${rightChildCell.i}, column ${rightChildCell.j} → ${rightChildCell.label}`
+      : `none (row k+1 = ${k + 1} > column j = ${j})`;
+
+    const caption = `At R[${i},${j}] = ${k} (${kLabel}). Left: ${leftText}. Right: ${rightText}.`;
+    const explanation =
+      i === 1 && j === n
+        ? `Start at top-right cell R[1, ${n}] = ${k} (${kLabel}), which becomes the Root of the Optimal BST (purple). To find its Left Child, move left in the same row (row ${i}, column k−1 = ${k - 1}) ➔ ${leftChildCell ? `R[${leftChildCell.i}, ${leftChildCell.j}] = ${leftChildCell.k} (${leftChildCell.label}) in green` : 'empty'}. To find its Right Child, move down in the same column (row k+1 = ${k + 1}, column ${j}) ➔ ${rightChildCell ? `R[${rightChildCell.i}, ${rightChildCell.j}] = ${rightChildCell.k} (${rightChildCell.label}) in orange` : 'empty'}.`
+        : `Expand subtree for range [${i}..${j}] at cell R[${i}, ${j}] = ${k} (${kLabel}) in purple. Left child is at same row ${i}, column k−1 = ${k - 1} (${leftChildCell ? `R[${leftChildCell.i}, ${leftChildCell.j}] = ${leftChildCell.k} → ${leftChildCell.label} in green` : 'empty since i > k−1'}). Right child is at row k+1 = ${k + 1}, same column ${j} (${rightChildCell ? `R[${rightChildCell.i}, ${rightChildCell.j}] = ${rightChildCell.k} → ${rightChildCell.label} in orange` : 'empty since k+1 > j'}).`;
+
+    const formula = `R[${i},${j}] = ${k} (${kLabel})  ⇒  Left = R[${i}, ${k - 1}] (${leftChildCell ? leftChildCell.label : '∅'}),  Right = R[${k + 1}, ${j}] (${rightChildCell ? rightChildCell.label : '∅'})`;
+
+    expansionRecords.push({
+      i,
+      j,
+      k,
+      kLabel,
+      leftChildCell,
+      rightChildCell,
+      visibleSnapshot: new Set(visibleKeys),
+      caption,
+      explanation,
+      formula,
+    });
+  }
+
+  const totalTreeSteps = expansionRecords.length + 2;
+  const rootK = R[1][n] as number;
+  const rootLabel = keys[rootK - 1];
+
+  // Tree Step 1: Start with ONLY the single Root node (1 letter alone!)
+  const rootOnlySet = new Set<number>([rootK]);
+  const rootOnlyTree = buildPartialTree(1, n, rootOnlySet, rootK);
 
   steps.push({
     stepNumber: steps.length + 1,
     codeLine: 16,
-    title: `Step 4: Construct Optimal Binary Search Tree from Root Table R`,
-    explanation: `Minimum expected search cost is C[1, ${n}] = ${C[1][n]}. Root of the entire tree is R[1, ${n}] = ${R[1][n]} (Key '${keys[(R[1][n] as number) - 1]}'). Left subtree comes from C[1, ${(R[1][n] as number) - 1}] and right subtree from C[${(R[1][n] as number) + 1}, ${n}].`,
-    formula: `Min Expected Cost = C[1, ${n}] = ${C[1][n]}, Root = R[1, ${n}] = ${R[1][n]} (${keys[(R[1][n] as number) - 1]})`,
-    variables: { 'Min Cost C[1,n]': C[1][n]!, 'Root Key': keys[(R[1][n] as number) - 1] },
-    bTreeView: obstRoot
-      ? {
-          order: 2,
-          minKeys: 1,
-          maxKeys: 1,
-          root: obstRoot,
-          operationNote: `Constructed Optimal BST (Root = ${keys[(R[1][n] as number) - 1]}, Expected Cost = ${C[1][n]})`,
-        }
-      : undefined,
-    tables: buildOBSTTables(1, n, R[1][n] ?? 1),
+    title: `Tree Construction (Step 1 of ${totalTreeSteps}): Start at Top-Right Cell R[1, ${n}] = ${rootK} (${rootLabel})`,
+    explanation: `Always start at the top-right corner of the Root Table: R[1, ${n}] = ${rootK}. This tells us that key '${rootLabel}' (index k = ${rootK}) is the Root of the entire Optimal Binary Search Tree. We place '${rootLabel}' alone at the top of the tree first.`,
+    formula: `Root of Tree [1..${n}] = R[1, ${n}] = ${rootK} (${rootLabel})`,
+    variables: {
+      'Starting Cell': `R[1,${n}] = ${rootK}`,
+      'Root Key Placed': rootLabel,
+      'Nodes in Tree': 1,
+    },
+    obstTreeView: {
+      n,
+      keys,
+      rootMatrix: rootMatrixCopy,
+      currentCell: { i: 1, j: n, k: rootK, label: rootLabel },
+      leftChildCell: null,
+      rightChildCell: null,
+      treeRoot: rootOnlyTree,
+      stepCaption: `Start at R[1,${n}] = ${rootK} (${rootLabel}). Place ${rootLabel} as the Root of the tree (1st node).`,
+      treeStepIndex: 1,
+      totalTreeSteps,
+      expectedCost: C[1][n] ?? 0,
+    },
+    tables: [],
+  });
+
+  expansionRecords.forEach((rec, idx) => {
+    const treeStepNum = idx + 2;
+    const partialTree = buildPartialTree(
+      1,
+      n,
+      rec.visibleSnapshot,
+      rec.k,
+      rec.leftChildCell?.k,
+      rec.rightChildCell?.k
+    );
+
+    steps.push({
+      stepNumber: steps.length + 1,
+      codeLine: 16,
+      title: `Tree Construction (Step ${treeStepNum} of ${totalTreeSteps}): Expand R[${rec.i}, ${rec.j}] = ${rec.k} (${rec.kLabel})`,
+      explanation: rec.explanation,
+      formula: rec.formula,
+      variables: {
+        'Current Cell': `R[${rec.i},${rec.j}] = ${rec.k} (${rec.kLabel})`,
+        'Left Child (row i, col k-1)': rec.leftChildCell
+          ? `R[${rec.leftChildCell.i},${rec.leftChildCell.j}] = ${rec.leftChildCell.k} (${rec.leftChildCell.label})`
+          : 'None',
+        'Right Child (row k+1, col j)': rec.rightChildCell
+          ? `R[${rec.rightChildCell.i},${rec.rightChildCell.j}] = ${rec.rightChildCell.k} (${rec.rightChildCell.label})`
+          : 'None',
+      },
+      obstTreeView: {
+        n,
+        keys,
+        rootMatrix: rootMatrixCopy,
+        currentCell: { i: rec.i, j: rec.j, k: rec.k, label: rec.kLabel },
+        leftChildCell: rec.leftChildCell,
+        rightChildCell: rec.rightChildCell,
+        treeRoot: partialTree,
+        stepCaption: rec.caption,
+        treeStepIndex: treeStepNum,
+        totalTreeSteps,
+        expectedCost: C[1][n] ?? 0,
+      },
+      tables: [],
+    });
+  });
+
+  // Final Step: Complete Optimal BST
+  const allKeysSet = new Set<number>(Array.from({ length: n }, (_, idx) => idx + 1));
+  const finalTree = buildPartialTree(1, n, allKeysSet, rootK);
+
+  steps.push({
+    stepNumber: steps.length + 1,
+    codeLine: 16,
+    title: `Tree Construction (Step ${totalTreeSteps} of ${totalTreeSteps}): Completed Optimal Binary Search Tree`,
+    explanation: `All ${n} keys have been placed into the Optimal Binary Search Tree! Root is ${keys[rootK - 1]} (from R[1, ${n}] = ${rootK}) and the minimum expected search cost is C[1, ${n}] = ${C[1][n]}.`,
+    formula: `Optimal BST Complete — Root = ${keys[rootK - 1]} (R[1,${n}] = ${rootK}),  Minimum Expected Search Cost C[1,${n}] = ${C[1][n]}`,
+    variables: {
+      'Min Expected Cost C[1,n]': C[1][n]!,
+      'Tree Root R[1,n]': `${rootK} (${keys[rootK - 1]})`,
+      'Total Keys Placed': n,
+    },
+    obstTreeView: {
+      n,
+      keys,
+      rootMatrix: rootMatrixCopy,
+      currentCell: { i: 1, j: n, k: rootK, label: keys[rootK - 1] },
+      leftChildCell: null,
+      rightChildCell: null,
+      treeRoot: finalTree,
+      stepCaption: `Optimal Binary Search Tree complete! Root is R[1,${n}] = ${rootK} (${keys[rootK - 1]}) with minimum expected cost C[1,${n}] = ${C[1][n]}.`,
+      treeStepIndex: totalTreeSteps,
+      totalTreeSteps,
+      expectedCost: C[1][n] ?? 0,
+    },
+    tables: [],
   });
 
   return steps;
