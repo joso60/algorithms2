@@ -1218,7 +1218,31 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
 // 7. B-TREES (Order m, Recursive Percolate-Up Splitting & Exam Deletion Scenarios)
 // ============================================================================
 export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceStep[] {
-  const m = Math.max(3, Math.min(7, Number(orderStr) || 5));
+  // Exam presets that start from a pre-built tree. They are executed by the SAME
+  // general insertion engine below (no hand-written snapshots), so the split /
+  // median rule is always identical to every other B-Tree insertion trace.
+  const PRESET_START_TREES: Record<
+    string,
+    {
+      label: string;
+      order: number;
+      keys: string;
+      tree: { keys: number[]; children: { keys: number[] }[] };
+    }
+  > = {
+    'fall2025-q8': {
+      label: 'Fall 2025 MidTerm Q8',
+      order: 4,
+      keys: '19, 56, 87, 42, 77',
+      tree: {
+        keys: [47, 68],
+        children: [{ keys: [13, 24, 38] }, { keys: [59, 64] }, { keys: [71, 82, 95] }],
+      },
+    },
+  };
+  const preset = PRESET_START_TREES[exampleKey];
+
+  const m = preset ? preset.order : Math.max(3, Math.min(7, Number(orderStr) || 5));
   const minKeys = Math.ceil(m / 2) - 1;
   const maxKeys = m - 1;
   const steps: TraceStep[] = [];
@@ -1248,282 +1272,6 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
       }),
     };
   };
-
-  if (exampleKey === 'fall2025-q8') {
-    // Exact Fall 2025 MidTerm Q8: Initial B-Tree (m=4) + Insert 19, 56, 87, 42, 77
-    // With explicit intermediate Overflow sub-steps!
-    const snapshots: {
-      title: string;
-      codeLine: number;
-      explanation: string;
-      formula: string;
-      tree: BTreeNodeView;
-      tableRow: string[];
-    }[] = [
-      {
-        title: 'Initial B-Tree (Order m = 4, Min Keys = 1, Max Keys = 3)',
-        codeLine: 1,
-        explanation:
-          'Initial B-Tree from Fall 2025 Midterm Q8: Root [47, 68] with 3 leaf children: [13, 24, 38], [59, 64], and [71, 82, 95].',
-        formula: `Order m = 4 ⇒ Min Keys = ⌈4/2⌉ - 1 = 1, Max Keys = 4 - 1 = 3`,
-        tree: {
-          id: 'root',
-          keys: [47, 68],
-          children: [
-            { id: 'c1', keys: [13, 24, 38] },
-            { id: 'c2', keys: [59, 64] },
-            { id: 'c3', keys: [71, 82, 95] },
-          ],
-        },
-        tableRow: ['Initial', '[47, 68]', '[13, 24, 38] | [59, 64] | [71, 82, 95]', 'Initial State'],
-      },
-      {
-        title: 'Insert 19 (Sub-Step A): Temporary Insert in Leaf [13, 19, 24, 38] → OVERFLOW!',
-        codeLine: 4,
-        explanation:
-          'Search for 19 (< 47) leads to leftmost leaf [13, 24, 38]. Inserting 19 in sorted order gives [13, 19, 24, 38], which has 4 keys (> Max Keys 3) → OVERFLOW! Median key 24 will be pushed up.',
-        formula: `Leaf [13, 19, 24, 38] has 4 keys > Max Keys (3) ⇒ Overflow! Median = 24`,
-        tree: {
-          id: 'root',
-          keys: [47, 68],
-          children: [
-            {
-              id: 'c1',
-              keys: [13, 19, 24, 38],
-              highlight: 'overflow',
-              activeKey: 19,
-              medianKey: 24,
-              badgeText: 'OVERFLOW (4 > 3) • Median = 24',
-            },
-            { id: 'c2', keys: [59, 64] },
-            { id: 'c3', keys: [71, 82, 95] },
-          ],
-        },
-        tableRow: ['Insert 19 (Overflow)', '[47, 68]', '[13, 19, 24, 38]* | [59, 64] | [71, 82, 95]', 'Leaf Overflows (4 > 3)'],
-      },
-      {
-        title: 'Insert 19 (Sub-Step B): Split Leaf Around 24 & Push 24 Up to Root',
-        codeLine: 6,
-        explanation:
-          'Split [13, 19, 24, 38] into left leaf [13, 19] and right leaf [38], and push median 24 up into the parent root node → Root becomes [24, 47, 68] (3 keys ≤ Max 3).',
-        formula: `Split [13, 19, 24, 38] → [13, 19] & [38]; Push 24 up → Root [24, 47, 68]`,
-        tree: {
-          id: 'root',
-          keys: [24, 47, 68],
-          highlight: 'active',
-          activeKey: 24,
-          badgeText: 'Promoted 24 ↑',
-          children: [
-            { id: 'c1a', keys: [13, 19], highlight: 'split' },
-            { id: 'c1b', keys: [38], highlight: 'split' },
-            { id: 'c2', keys: [59, 64] },
-            { id: 'c3', keys: [71, 82, 95] },
-          ],
-        },
-        tableRow: ['Insert 19 (Split)', '[24, 47, 68]', '[13, 19] | [38] | [59, 64] | [71, 82, 95]', 'Split leaf, push 24 up'],
-      },
-      {
-        title: 'Insert 56: Fits Directly in Leaf [59, 64] → [56, 59, 64]',
-        codeLine: 3,
-        explanation:
-          '56 lies between 47 and 68. Target leaf [59, 64] has only 2 keys (< 3). Insert 56 in sorted order to get [56, 59, 64] (3 keys ≤ Max 3). No split needed!',
-        formula: `47 < 56 < 68 ⇒ Insert into leaf [56, 59, 64] (3 keys ≤ Max 3)`,
-        tree: {
-          id: 'root',
-          keys: [24, 47, 68],
-          children: [
-            { id: 'c1a', keys: [13, 19] },
-            { id: 'c1b', keys: [38] },
-            { id: 'c2', keys: [56, 59, 64], highlight: 'found', activeKey: 56 },
-            { id: 'c3', keys: [71, 82, 95] },
-          ],
-        },
-        tableRow: ['Insert 56', '[24, 47, 68]', '[13, 19] | [38] | [56, 59, 64] | [71, 82, 95]', 'Direct leaf insert'],
-      },
-      {
-        title: 'Insert 87 (Sub-Step A): Temporary Insert in Leaf [71, 82, 87, 95] → OVERFLOW!',
-        codeLine: 4,
-        explanation:
-          '87 > 68 goes to rightmost leaf [71, 82, 95]. Inserting 87 gives [71, 82, 87, 95] (4 keys > Max 3) → OVERFLOW! Median 82 will be pushed up to the root.',
-        formula: `Leaf [71, 82, 87, 95] has 4 keys > Max Keys (3) ⇒ Overflow! Median = 82`,
-        tree: {
-          id: 'root',
-          keys: [24, 47, 68],
-          children: [
-            { id: 'c1a', keys: [13, 19] },
-            { id: 'c1b', keys: [38] },
-            { id: 'c2', keys: [56, 59, 64] },
-            {
-              id: 'c3',
-              keys: [71, 82, 87, 95],
-              highlight: 'overflow',
-              activeKey: 87,
-              medianKey: 82,
-              badgeText: 'OVERFLOW (4 > 3) • Median = 82',
-            },
-          ],
-        },
-        tableRow: ['Insert 87 (Leaf Overflow)', '[24, 47, 68]', '[13, 19] | [38] | [56, 59, 64] | [71, 82, 87, 95]*', 'Leaf Overflows (4 > 3)'],
-      },
-      {
-        title: 'Insert 87 (Sub-Step B): Push 82 Up → Root [24, 47, 68, 82] OVERFLOWS!',
-        codeLine: 6,
-        explanation:
-          'Leaf splits into [71] and [87, 95], pushing 82 up into the root. The root now has 4 keys [24, 47, 68, 82] (> Max Keys 3) → PARENT/ROOT OVERFLOW! Percolate up by splitting the root around median 47.',
-        formula: `Root [24, 47, 68, 82] has 4 keys > Max Keys (3) ⇒ Root Overflows! Median = 47`,
-        tree: {
-          id: 'root',
-          keys: [24, 47, 68, 82],
-          highlight: 'overflow',
-          activeKey: 82,
-          medianKey: 47,
-          badgeText: 'ROOT OVERFLOW (4 > 3) • Median = 47',
-          children: [
-            { id: 'c1a', keys: [13, 19] },
-            { id: 'c1b', keys: [38] },
-            { id: 'c2', keys: [56, 59, 64] },
-            { id: 'c3a', keys: [71], highlight: 'split' },
-            { id: 'c3b', keys: [87, 95], highlight: 'split' },
-          ],
-        },
-        tableRow: ['Insert 87 (Root Overflow)', '[24, 47, 68, 82]*', '[13, 19] | [38] | [56, 59, 64] | [71] | [87, 95]', 'Root Overflows (4 > 3)'],
-      },
-      {
-        title: 'Insert 87 (Sub-Step C): Root Splits Around 47 → Tree Grows to 3 Levels!',
-        codeLine: 6,
-        explanation:
-          'Root [24, 47, 68, 82] splits around median 47: 47 becomes the new Root [47], with left internal node [24] (pointing to [13, 19] and [38]) and right internal node [68, 82] (pointing to [56, 59, 64], [71], and [87, 95]).',
-        formula: `New Root [47] → Left Internal [24] & Right Internal [68, 82] (Height grows to 3 levels)`,
-        tree: {
-          id: 'root',
-          keys: [47],
-          highlight: 'active',
-          activeKey: 47,
-          badgeText: 'New Root ↑ (3 Levels)',
-          children: [
-            {
-              id: 'l1',
-              keys: [24],
-              highlight: 'split',
-              children: [
-                { id: 'c1a', keys: [13, 19] },
-                { id: 'c1b', keys: [38] },
-              ],
-            },
-            {
-              id: 'r1',
-              keys: [68, 82],
-              highlight: 'split',
-              children: [
-                { id: 'c2', keys: [56, 59, 64] },
-                { id: 'c3a', keys: [71] },
-                { id: 'c3b', keys: [87, 95] },
-              ],
-            },
-          ],
-        },
-        tableRow: ['Insert 87 (Root Split)', '[47] → [24], [68, 82]', '[13, 19] | [38] | [56, 59, 64] | [71] | [87, 95]', 'Cascading Root Split (3 Levels)'],
-      },
-      {
-        title: 'Insert 42: Fits Directly in Leaf [38] → [38, 42]',
-        codeLine: 3,
-        explanation:
-          '42 < 47 (go left to [24]), and 42 > 24 (follow second pointer of [24] to leaf [38]). Insert 42 directly to form [38, 42].',
-        formula: `24 < 42 < 47 ⇒ Leaf [38] becomes [38, 42]`,
-        tree: {
-          id: 'root',
-          keys: [47],
-          children: [
-            {
-              id: 'l1',
-              keys: [24],
-              children: [
-                { id: 'c1a', keys: [13, 19] },
-                { id: 'c1b', keys: [38, 42], highlight: 'found', activeKey: 42 },
-              ],
-            },
-            {
-              id: 'r1',
-              keys: [68, 82],
-              children: [
-                { id: 'c2', keys: [56, 59, 64] },
-                { id: 'c3a', keys: [71] },
-                { id: 'c3b', keys: [87, 95] },
-              ],
-            },
-          ],
-        },
-        tableRow: ['Insert 42', '[47] → [24], [68, 82]', '[13, 19] | [38, 42] | [56, 59, 64] | [71] | [87, 95]', 'Direct leaf insert'],
-      },
-      {
-        title: 'Insert 77: Fits Directly in Leaf [71] → [71, 77]',
-        codeLine: 3,
-        explanation:
-          '77 > 47 (go right to [68, 82]), and 68 < 77 < 82 (follow middle pointer of [68, 82] to leaf [71]). Insert 77 directly to get [71, 77].',
-        formula: `68 < 77 < 82 ⇒ Leaf [71] becomes [71, 77]`,
-        tree: {
-          id: 'root',
-          keys: [47],
-          children: [
-            {
-              id: 'l1',
-              keys: [24],
-              children: [
-                { id: 'c1a', keys: [13, 19] },
-                { id: 'c1b', keys: [38, 42] },
-              ],
-            },
-            {
-              id: 'r1',
-              keys: [68, 82],
-              children: [
-                { id: 'c2', keys: [56, 59, 64] },
-                { id: 'c3a', keys: [71, 77], highlight: 'found', activeKey: 77 },
-                { id: 'c3b', keys: [87, 95] },
-              ],
-            },
-          ],
-        },
-        tableRow: ['Insert 77', '[47] → [24], [68, 82]', '[13, 19] | [38, 42] | [56, 59, 64] | [71, 77] | [87, 95]', 'Direct leaf insert'],
-      },
-    ];
-
-    snapshots.forEach((snap, idx) => {
-      steps.push({
-        stepNumber: idx + 1,
-        codeLine: snap.codeLine,
-        title: snap.title,
-        explanation: snap.explanation,
-        formula: snap.formula,
-        variables: { Order_m: 4, MinKeys: 1, MaxKeys: 3 },
-        bTreeView: {
-          order: 4,
-          minKeys: 1,
-          maxKeys: 3,
-          root: snap.tree,
-          operationNote: snap.title,
-        },
-        tables: [
-          {
-            id: 'btree-summary',
-            title: 'Fall 2025 MidTerm Q8 Step-by-Step Insertion Log',
-            colHeaders: ['Operation', 'Internal Nodes', 'Leaves (Left to Right)', 'Action Taken'],
-            rows: snapshots.slice(0, idx + 1).map((s, rIdx) =>
-              s.tableRow.map((cell, cIdx) => ({
-                value: cell,
-                state: rIdx === idx ? 'active' : 'computed',
-                editableKey: cIdx === 1 || cIdx === 2 ? `bt-${rIdx}-${cIdx}` : undefined,
-                expectedValue: cell,
-                mistakeExplanation: s.explanation,
-              }))
-            ),
-          },
-          buildBoundsTable(4),
-        ],
-      });
-    });
-    return steps;
-  }
 
   if (exampleKey === 'fall2020-q5') {
     // Fall 2020 Midterm Q5: B-Tree of order m=5, Delete E, R, M
@@ -2012,16 +1760,26 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
     };
   };
 
-  const items = exampleKey
+  const items = (preset ? preset.keys : exampleKey)
     .split(/[\s,]+/)
     .map((s) => s.trim())
     .filter(Boolean);
 
-  let root: SimNode = {
-    id: nextId('root'),
-    keys: [],
-    children: [],
-  };
+  let root: SimNode = preset
+    ? {
+        id: nextId('root'),
+        keys: [...preset.tree.keys],
+        children: preset.tree.children.map((ch) => ({
+          id: nextId('leaf'),
+          keys: [...ch.keys],
+          children: [],
+        })),
+      }
+    : {
+        id: nextId('root'),
+        keys: [],
+        children: [],
+      };
 
   const historyLogRows: { op: string; internal: string; leaves: string; note: string }[] = [];
 
@@ -2092,6 +1850,18 @@ export function generateBTreeSteps(exampleKey: string, orderStr: string): TraceS
       ],
     });
   };
+
+  if (preset) {
+    pushSnapshot(
+      `Initial B-Tree — ${preset.label} (Order m = ${m}, Min Keys = ${minKeys}, Max Keys = ${maxKeys})`,
+      1,
+      `Starting tree given in ${preset.label}. We now insert ${items.join(', ')} one by one. On overflow (${m} keys), the node splits at the median key index ⌈m/2⌉ − 1 = ${Math.ceil(m / 2) - 1} (the ${Math.ceil(m / 2)}${Math.ceil(m / 2) === 2 ? 'nd' : Math.ceil(m / 2) === 3 ? 'rd' : 'th'} key), which is pushed up.`,
+      `Order m = ${m} ⇒ Min Keys = ⌈${m}/2⌉ − 1 = ${minKeys}, Max Keys = ${m} − 1 = ${maxKeys}`,
+      '—',
+      'Initial',
+      'Initial State'
+    );
+  }
 
   items.forEach((item, keyIdx) => {
     const val: string | number = isNaN(Number(item)) ? item : Number(item);
