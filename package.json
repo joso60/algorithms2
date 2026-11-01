@@ -1,7 +1,7 @@
 {
-  "name": "cpcs324-algorithms-workbench",
+  "name": "cpu-scheduler",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
