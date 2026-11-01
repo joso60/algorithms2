@@ -3,12 +3,9 @@ import type { AlgorithmMeta } from '../types/algorithm';
 import {
   Activity,
   Cpu,
-  HardDrive,
   Sigma,
-  BookOpen,
   CheckCircle2,
   FileText,
-  Sparkles,
 } from 'lucide-react';
 
 interface AnalyzeViewProps {

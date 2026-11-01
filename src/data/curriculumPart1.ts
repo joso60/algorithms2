@@ -29,6 +29,15 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'ccs-exam-2020',
+        name: 'Fall 2020 MidTerm Q3 (45, 13, 29, 55, 10, 32)',
+        badge: 'Past Exam',
+        description:
+          'Official 4-point exam problem from Fall 2020 Midterm Q3! Sorts the 6-element array [45, 13, 29, 55, 10, 32] using comparison counts.',
+        inputSummary: 'A = [45, 13, 29, 55, 10, 32]',
+        customInputDefaults: { array: '45, 13, 29, 55, 10, 32' },
+      },
+      {
         id: 'ccs-slide-1',
         name: 'Slide 17 Example (62, 31, 84, 96, 19, 47)',
         badge: 'Slide Example',
@@ -328,6 +337,15 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         customInputDefaults: { array: 'b, c, d, c, b, a, a, b' },
       },
       {
+        id: 'dcs-exam-2020-formb',
+        name: 'Fall 2020 MidTerm Q3 Form B (12, 13, 14, 13, 12, 11, 11, 12)',
+        badge: 'Past Exam',
+        description:
+          'Exact 4-point tracing question from Fall 2020 Midterm Exam Q3 Form B (l = 11, u = 14)!',
+        inputSummary: 'A = [12, 13, 14, 13, 12, 11, 11, 12]',
+        customInputDefaults: { array: '12, 13, 14, 13, 12, 11, 11, 12' },
+      },
+      {
         id: 'dcs-slide-31',
         name: 'Slide 31 Example (13, 11, 12, 13, 12, 12)',
         badge: 'Slide Example',
@@ -621,6 +639,18 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         },
       },
       {
+        id: 'hp-exam-summer2018',
+        name: 'Summer 2018 Final Q1 ("GBAGAGAG" in DNA Text)',
+        badge: 'Past Exam',
+        description:
+          'Official 5-point exam problem from Summer 2018 Final Exam Q1! Shift table t(A)=1, t(G)=2, t(B)=6, other=8 with unmatched search.',
+        inputSummary: 'P = "GBAGAGAG", T = "GCATCGCAGAGAGTATACAGTACG"',
+        customInputDefaults: {
+          text: 'GCATCGCAGAGAGTATACAGTACG',
+          pattern: 'GBAGAGAG',
+        },
+      },
+      {
         id: 'hp-slide-barber',
         name: 'Slide 43 Example ("BARBER" in "JIM_SAW_ME_IN_A_BARBERSHOP")',
         badge: 'Slide Example',
@@ -760,6 +790,18 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
       'return -1',
     ],
     examples: [
+      {
+        id: 'bm-exam-summer2018',
+        name: 'Summer 2018 MidTerm Q2 (Binary: P = "10000", T = "10100100001100")',
+        badge: 'Past Exam',
+        description:
+          'Official 5-point exam problem from Summer 2018 Midterm Q2! Binary pattern P = "10000" with bad-symbol table t₁(0)=1, t₁(1)=4 and good-suffix shifts.',
+        inputSummary: 'P = "10000", T = "10100100001100"',
+        customInputDefaults: {
+          text: '10100100001100',
+          pattern: '10000',
+        },
+      },
       {
         id: 'bm-slide-baobab',
         name: 'Slide 42 Example ("BAOBAB" in "BESS_KNEW_ABOUT_BAOBABS")',
@@ -1105,10 +1147,10 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
       },
       {
         id: 'bt-slide-create-2',
-        name: 'Slides 72–83 Creation Ex. 2 (17 Numbers: 78, 21, 14..30, 21, m = 5)',
-        badge: 'Slide Example',
+        name: 'Fall 2020 MidTerm Q5 Form B & Slides 72–83 (17 Keys: 78, 21, 14..30, 21, m = 5)',
+        badge: 'Past Exam',
         description:
-          'Complete 17-key numeric creation from Slides 72–83 (78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21), showing every overflow and the final 3-level split on 42!',
+          'Exact exam problem from Fall 2020 Midterm Q5 Form B (and Slides 72–83: 78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21), showing every overflow and the final 3-level split on 42!',
         inputSummary: 'Insert 78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21 (m = 5)',
         customInputDefaults: {
           keys: '78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21',
@@ -1137,11 +1179,11 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
       },
       {
         id: 'bt-exam-2020',
-        name: '🚫 [EXCLUDED TOPIC: Deletion] Fall 2020 MidTerm Q5: Delete E, R, M (m = 5)',
+        name: '🚫 [EXCLUDED TOPIC: Deletion] Fall 2020 MidTerm Q5: Delete E, F, R (m = 5)',
         badge: 'Past Exam',
         description:
           '⚠️ EXCLUDED FROM SYLLABUS (Slides 95–128): B-Tree Deletion is removed per instructor blacklist. Kept here for reference only.',
-        inputSummary: '[EXCLUDED] Initial Tree (m=5) + Delete E, Delete R, Delete M',
+        inputSummary: '[EXCLUDED] Initial Tree (m=5) + Delete E, Delete F, Delete R',
         customInputDefaults: { keys: 'fall2020-q5', order: '5' },
       },
       {

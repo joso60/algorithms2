@@ -793,6 +793,7 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
       affectedExams: [
         'Final Exam Fall 2021 Q1 (Robot Coin-Collection — EXCLUDED)',
         'Final Exam Spring 2021 Q1 (Robot Coin-Collection — EXCLUDED)',
+        'Final Exam Summer 2018 Q4 (Robot Coin-Collection — EXCLUDED)',
       ],
     },
     summary:
@@ -809,6 +810,17 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
       'return F[n, m]',
     ],
     examples: [
+      {
+        id: 'cc-exam-summer2018',
+        name: '🚫 [EXCLUDED] Summer 2018 Final Exam Q4 (6×6 Grid)',
+        badge: 'Past Exam',
+        description:
+          '⚠️ EXCLUDED FROM SYLLABUS: Robot Coin Collecting on 6×6 board from Summer 2018 Final Exam Q4.',
+        inputSummary: '6×6 Grid with coins at (1,3), (1,6), (2,4), (3,2), (3,5), (4,4), (5,1), (5,5), (6,3), (6,5)',
+        customInputDefaults: {
+          grid: '0 0 1 0 0 1; 0 0 0 1 0 0; 0 1 0 0 1 0; 0 0 0 1 0 0; 1 0 0 0 1 0; 0 0 1 0 1 0',
+        },
+      },
       {
         id: 'cc-slide-146',
         name: 'Slide 146 5×6 Board Example (Max Coins = 5)',
@@ -949,9 +961,9 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     examples: [
       {
         id: 'ks-exam-2025',
-        name: 'Fall 2025 MidTerm Q4 (5 Items, W = 6, Max Value = $65)',
+        name: 'Summer 2018 Final Q2 & Fall 2025 MidTerm Q4 (5 Items, W = 6, Max Value = $65)',
         badge: 'Past Exam',
-        description: 'Exact 12-point exam problem from Fall 2025 Midterm Q4!',
+        description: 'Exact exam problem from BOTH Summer 2018 Final Exam Q2 and Fall 2025 Midterm Q4!',
         inputSummary: 'w = [3, 2, 1, 4, 5], v = [25, 20, 15, 40, 50], W = 6',
         customInputDefaults: {
           weights: '3, 2, 1, 4, 5',
@@ -1126,13 +1138,25 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     examples: [
       {
         id: 'obst-exam-2020-2025',
-        name: 'Fall 2020 Q3 & Fall 2025 Q6 MidTerm Exam (p = [0.2, 0.1, 0.4, 0.3])',
+        name: 'Summer 2018 Q5, Fall 2020 Q3 & Fall 2025 Q6 MidTerm Exam (p = [0.2, 0.1, 0.4, 0.3])',
         badge: 'Past Exam',
-        description: 'Exact exam problem from BOTH Fall 2020 Q3 and Fall 2025 Q6! Computes C[2,3]=0.6, C[2,4]=1.2, C[1,4]=1.7.',
+        description: 'Exact exam problem from Summer 2018 Midterm Q5, Fall 2020 Midterm Q3, and Fall 2025 Midterm Q6! Computes C[2,3]=0.6, C[2,4]=1.2, C[1,4]=1.7.',
         inputSummary: 'Keys = [A, B, C, D], Prob = [0.2, 0.1, 0.4, 0.3]',
         customInputDefaults: {
           keys: 'A, B, C, D',
           probs: '0.2, 0.1, 0.4, 0.3',
+        },
+      },
+      {
+        id: 'obst-exam-2020-formb',
+        name: 'Fall 2020 MidTerm Q4 Form B (3 Keys: A, B, C with p = [0.1, 0.3, 0.2])',
+        badge: 'Past Exam',
+        description:
+          'Official 8-point exam problem from Fall 2020 Midterm Q4 Form B! 3 keys with probabilities [0.1, 0.3, 0.2].',
+        inputSummary: 'Keys = [A, B, C], Prob = [0.1, 0.3, 0.2]',
+        customInputDefaults: {
+          keys: 'A, B, C',
+          probs: '0.1, 0.3, 0.2',
         },
       },
       {
@@ -1414,6 +1438,28 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
         inputSummary: 'a→b(8), a→d(1), b→c(1), c→a(4), d→b(2), d→c(9)',
         customInputDefaults: {
           matrix: '0 8 inf 1; inf 0 1 inf; 4 inf 0 inf; inf 2 9 0',
+        },
+      },
+      {
+        id: 'floyd-exam-2020-formb',
+        name: 'Fall 2020 MidTerm Q1 Form B (3 Vertices: a, b, c)',
+        badge: 'Past Exam',
+        description:
+          'Official 4-point exam problem from Fall 2020 MidTerm Q1 Form B! 3-vertex directed graph: a→b(4), a→c(1), b→a(2), c→b(2).',
+        inputSummary: 'a→b(4), a→c(1), b→a(2), c→b(2)',
+        customInputDefaults: {
+          matrix: '0 4 1; 2 0 inf; inf 2 0',
+        },
+      },
+      {
+        id: 'floyd-exam-summer2018',
+        name: 'Summer 2018 MidTerm Q4 (3 Vertices: 1, 2, 3 with Negative Weight -3)',
+        badge: 'Past Exam',
+        description:
+          'Official 5-point exam problem from Summer 2018 Midterm Q4! 3 vertices with edges 1→2(4), 1→3(5), 2→1(2), 3→2(-3).',
+        inputSummary: '1→2(4), 1→3(5), 2→1(2), 3→2(-3)',
+        customInputDefaults: {
+          matrix: '0 4 5; 2 0 inf; inf -3 0',
         },
       },
       {

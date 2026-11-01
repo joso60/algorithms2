@@ -29,28 +29,38 @@ export const MIDTERM_EXAM_FREQUENCY: Record<
   { count: number; papers: string[] }
 > = {
   'comparison-counting-sort': {
-    count: 1,
-    papers: ['Winter 2023 MidTerm Q1'],
+    count: 2,
+    papers: ['Fall 2020 MidTerm Q3', 'Winter 2023 MidTerm Q1'],
   },
   'distribution-counting-sort-v1': {
     count: 1,
     papers: ['Winter 2023 MidTerm Q1 (1st Variant: A[1..15], C[0..9], B[1..15])'],
   },
   'distribution-counting-sort': {
-    count: 2,
-    papers: ['Spring 2021 MidTerm Q1', 'Fall 2025 MidTerm Q1'],
+    count: 3,
+    papers: ['Fall 2020 MidTerm Q3 (Form B)', 'Spring 2021 MidTerm Q1', 'Fall 2025 MidTerm Q1'],
   },
   'brute-force-sm': {
     count: 1,
     papers: ['Winter 2023 MidTerm Q2'],
   },
   horspool: {
-    count: 3,
-    papers: ['Fall 2020 MidTerm Q2', 'Winter 2023 MidTerm Q2', 'Fall 2025 MidTerm Q2'],
+    count: 4,
+    papers: [
+      'Summer 2018 Final Q1',
+      'Fall 2020 MidTerm Q2',
+      'Winter 2023 MidTerm Q2',
+      'Fall 2025 MidTerm Q2',
+    ],
   },
   'boyer-moore': {
-    count: 3,
-    papers: ['Spring 2021 MidTerm Q2', 'Winter 2023 MidTerm Q2', 'Fall 2025 MidTerm Q3'],
+    count: 4,
+    papers: [
+      'Summer 2018 MidTerm Q2',
+      'Spring 2021 MidTerm Q2',
+      'Winter 2023 MidTerm Q2',
+      'Fall 2025 MidTerm Q3',
+    ],
   },
   hashing: {
     count: 1,
@@ -90,21 +100,52 @@ export const MIDTERM_EXAM_FREQUENCY: Record<
     papers: [],
   },
   'knapsack-01': {
-    count: 2,
-    papers: ['Spring 2021 MidTerm Q3', 'Fall 2025 MidTerm Q4'],
+    count: 3,
+    papers: ['Summer 2018 Final Q2', 'Spring 2021 MidTerm Q3', 'Fall 2025 MidTerm Q4'],
   },
   obst: {
-    count: 2,
-    papers: ['Fall 2020 MidTerm Q3', 'Fall 2025 MidTerm Q6'],
+    count: 4,
+    papers: [
+      'Summer 2018 MidTerm Q5',
+      'Fall 2020 MidTerm Q3',
+      'Fall 2020 MidTerm Q4 (Form B)',
+      'Fall 2025 MidTerm Q6',
+    ],
   },
   warshall: {
     count: 0,
     papers: [],
   },
   floyd: {
-    count: 2,
-    papers: ['Fall 2020 MidTerm Q1', 'Fall 2025 MidTerm Q7'],
+    count: 4,
+    papers: [
+      'Summer 2018 MidTerm Q4',
+      'Fall 2020 MidTerm Q1',
+      'Fall 2020 MidTerm Q1 (Form B)',
+      'Fall 2025 MidTerm Q7',
+    ],
   },
+};
+
+export const ALGORITHM_CORE_PURPOSE: Record<AlgorithmId, string> = {
+  'comparison-counting-sort': 'Sorts an array by counting elements strictly smaller than each key',
+  'distribution-counting-sort-v1': 'Sorts integers using frequency counts and prefix sum offsets',
+  'distribution-counting-sort': 'Sorts keys across a bounded range using distribution accumulation',
+  'brute-force-sm': 'Finds a pattern in text by comparing characters left-to-right at each shift',
+  horspool: 'Fast pattern matching scanning right-to-left using bad-symbol shift table t₁(c)',
+  'boyer-moore': 'Optimal pattern matching using both bad-symbol t₁(c) and good-suffix d₂(k) shifts',
+  hashing: 'Stores & retrieves keys in O(1) avg time via hash functions & collision probing',
+  'b-trees': 'Self-balancing multiway search tree for fast disk-based indexing',
+  'assembly-line': 'Finds the fastest route through two parallel factory assembly lines',
+  'matrix-chain': 'Finds optimal parenthesization order minimizing scalar multiplications',
+  lcs: 'Finds the longest common subsequence of characters shared between two strings',
+  'coin-row': 'Selects non-adjacent coins to maximize total picked value',
+  'change-making': 'Finds the minimum number of coins needed to make change for amount n',
+  'coin-collecting': 'Finds the optimal path for a robot collecting maximum coins on a grid',
+  'knapsack-01': 'Finds the most valuable item subset fitting within weight capacity W',
+  obst: 'Constructs a binary search tree minimizing average search cost given key probabilities',
+  warshall: 'Computes the transitive closure (reachability matrix) of a directed graph',
+  floyd: 'Finds all-pairs shortest path distances between every vertex in a weighted graph',
 };
 
 export const ALL_ALGORITHMS: AlgorithmMeta[] = [...ALGORITHMS_PART1, ...ALGORITHMS_PART2].map(
@@ -445,48 +486,177 @@ export function generateRandomExamInputForAlgorithm(id: AlgorithmId): {
     }
 
     case 'horspool': {
-      // Exam-style DNA or 4-letter string with repeated letters inside pattern (like GCAGAG)
-      const alphabet = ['A', 'C', 'G', 'T'];
-      const c1 = pickRandom(alphabet);
-      const c2 = pickRandom(alphabet.filter((x) => x !== c1));
-      const c3 = pickRandom(alphabet.filter((x) => x !== c1 && x !== c2));
-      const patterns = [
-        `${c1}${c2}${c3}${c1}${c3}${c1}`,
-        `${c2}${c1}${c2}${c3}${c1}${c2}`,
-        `${c3}${c1}${c2}${c1}${c2}`,
-        `${c1}${c3}${c2}${c3}${c1}`,
-      ];
-      const pat = pickRandom(patterns);
-      // Build text with 2-3 partial suffix matches before full match at end
-      const noise1 = `${c1}${c2}${c3}${pickRandom(alphabet)}`;
-      const partial1 = pat.slice(2); // matches last m-2 chars!
-      const noise2 = `${pickRandom(alphabet)}${c1}${c2}`;
-      const partial2 = pat.slice(3);
-      const text = `${noise1}${partial1}${noise2}${partial2}${c3}${pat}`;
+      // Dynamic alphabet: DNA, English letters, or Binary with repeated internal characters
+      const archetype = pickRandom(['dna', 'letters', 'binary']);
+      let pat = '';
+      let alpha: string[] = [];
+
+      if (archetype === 'dna') {
+        const dnaPool = ['A', 'C', 'G', 'T'];
+        const c1 = pickRandom(dnaPool);
+        const c2 = pickRandom(dnaPool.filter((x) => x !== c1));
+        const c3 = pickRandom(dnaPool.filter((x) => x !== c1 && x !== c2));
+        alpha = [c1, c2, c3, pickRandom(dnaPool)];
+        const templates = [
+          `${c1}${c2}${c3}${c1}${c3}${c1}`,
+          `${c2}${c1}${c2}${c3}${c1}${c2}`,
+          `${c3}${c1}${c2}${c1}${c2}`,
+          `${c1}${c3}${c2}${c3}${c1}`,
+          `${c2}${c3}${c1}${c3}${c2}`,
+          `${c1}${c2}${c3}${c2}${c1}${c3}`,
+        ];
+        pat = pickRandom(templates);
+      } else if (archetype === 'binary') {
+        alpha = ['0', '1'];
+        const b1 = pickRandom(['0', '1']);
+        const b2 = b1 === '0' ? '1' : '0';
+        const templates = [
+          `${b1}${b2}${b1}${b1}${b2}${b1}`,
+          `${b2}${b1}${b2}${b2}${b1}`,
+          `${b1}${b1}${b2}${b1}${b2}`,
+          `${b2}${b2}${b1}${b2}${b1}${b1}`,
+        ];
+        pat = pickRandom(templates);
+      } else {
+        const letterSets = [
+          ['A', 'B', 'C', 'D'],
+          ['T', 'E', 'A', 'M'],
+          ['L', 'E', 'A', 'D'],
+          ['B', 'A', 'R', 'C'],
+          ['X', 'Y', 'Z', 'W'],
+        ];
+        const chosen = pickRandom(letterSets);
+        const [c1, c2, c3] = [chosen[0], chosen[1], chosen[2]];
+        alpha = chosen;
+        const templates = [
+          `${c1}${c2}${c3}${c1}${c2}`,
+          `${c3}${c1}${c2}${c3}${c1}`,
+          `${c2}${c1}${c3}${c1}${c2}`,
+          `${c1}${c3}${c2}${c1}${c3}${c2}`,
+        ];
+        pat = pickRandom(templates);
+      }
+
+      const randChar = () => pickRandom(alpha);
+      const randStr = (len: number) => Array.from({ length: len }, randChar).join('');
+      const lead = randStr(randInt(3, 5));
+      const partial = pat.slice(Math.max(1, pat.length - 3));
+      const mid = randStr(randInt(2, 4));
+      const text = `${lead}${partial}${mid}${pat}${randStr(randInt(1, 3))}`;
+
       return {
         inputs: { text, pattern: pat },
-        summaryLabel: `Random Exam Horspool Trace: P = "${pat}" (m = ${pat.length}), T = "${text}"`,
+        summaryLabel: `Random Exam Horspool Trace: P = "${pat}" (m = ${pat.length}), T = "${text}" (n = ${text.length})`,
       };
     }
 
     case 'boyer-moore': {
-      // Binary or 3-letter pattern with repeating suffixes (like 01010 or BAOBAB)
-      const bmPresets = [
-        { pat: '10101', alpha: ['0', '1'] },
-        { pat: '01101', alpha: ['0', '1'] },
-        { pat: '11010', alpha: ['0', '1'] },
-        { pat: 'ABCBAB', alpha: ['A', 'B', 'C'] },
-        { pat: 'CABAB', alpha: ['A', 'B', 'C'] },
-        { pat: 'BCABAB', alpha: ['A', 'B', 'C'] },
-      ];
-      const chosen = pickRandom(bmPresets);
-      const pat = chosen.pat;
-      const randChunk = (len: number) =>
-        Array.from({ length: len }, () => pickRandom(chosen.alpha)).join('');
-      const text = `${randChunk(4)}${pat.slice(2)}${randChunk(4)}${pat.slice(1)}${randChunk(2)}${pat}`;
+      // 4 Archetypes with unlimited dynamic combinations: Binary, DNA, Letters, and Classic Words
+      const archetype = pickRandom(['binary', 'parametric-letters', 'dna', 'classic-words']);
+      let pat = '';
+      let alpha: string[] = [];
+
+      if (archetype === 'binary') {
+        alpha = ['0', '1'];
+        const b1 = pickRandom(['0', '1']);
+        const b2 = b1 === '0' ? '1' : '0';
+        const templates = [
+          `${b1}${b2}${b1}${b1}${b2}`,
+          `${b2}${b1}${b2}${b2}${b1}`,
+          `${b1}${b2}${b1}${b2}${b1}`,
+          `${b1}${b1}${b2}${b1}${b1}`,
+          `${b2}${b1}${b1}${b2}${b1}${b2}`,
+          `${b1}${b2}${b2}${b1}${b2}${b1}`,
+          `${b1}${b2}${b1}${b2}${b2}${b1}`,
+          `${b2}${b2}${b1}${b2}${b1}${b2}`,
+        ];
+        pat = pickRandom(templates);
+      } else if (archetype === 'dna') {
+        const dnaPool = ['A', 'C', 'G', 'T'];
+        const c1 = pickRandom(dnaPool);
+        const c2 = pickRandom(dnaPool.filter((x) => x !== c1));
+        const c3 = pickRandom(dnaPool.filter((x) => x !== c1 && x !== c2));
+        alpha = [c1, c2, c3];
+        const templates = [
+          `${c1}${c2}${c3}${c1}${c2}`,
+          `${c2}${c1}${c3}${c2}${c1}`,
+          `${c1}${c3}${c2}${c1}${c3}`,
+          `${c3}${c1}${c2}${c3}${c1}${c2}`,
+          `${c1}${c2}${c1}${c3}${c1}${c2}`,
+          `${c2}${c3}${c1}${c2}${c3}${c1}`,
+          `${c1}${c1}${c2}${c3}${c1}${c1}`,
+        ];
+        pat = pickRandom(templates);
+      } else if (archetype === 'parametric-letters') {
+        const letterSets = [
+          ['A', 'B', 'C'],
+          ['X', 'Y', 'Z'],
+          ['M', 'A', 'N'],
+          ['B', 'A', 'R'],
+          ['K', 'L', 'M'],
+          ['P', 'Q', 'R'],
+        ];
+        const chosenSet = pickRandom(letterSets);
+        const [c1, c2, c3] = [chosenSet[0], chosenSet[1], chosenSet[2]];
+        alpha = chosenSet;
+        const templates = [
+          `${c1}${c2}${c3}${c1}${c2}`,
+          `${c3}${c1}${c2}${c1}${c2}`,
+          `${c2}${c1}${c2}${c3}${c1}${c2}`,
+          `${c1}${c2}${c1}${c3}${c1}${c2}`,
+          `${c1}${c3}${c2}${c3}${c1}`,
+          `${c2}${c3}${c1}${c2}${c3}${c1}`,
+          `${c1}${c2}${c3}${c2}${c1}`,
+          `${c3}${c2}${c1}${c3}${c2}`,
+        ];
+        pat = pickRandom(templates);
+      } else {
+        // Classic word motifs with repeating suffixes & prefixes
+        const classicWords = [
+          { pat: 'BAOBAB', alpha: ['A', 'B', 'O'] },
+          { pat: 'BANANA', alpha: ['A', 'B', 'N'] },
+          { pat: 'ANPANMAN', alpha: ['A', 'M', 'N', 'P'] },
+          { pat: 'PAPAYA', alpha: ['A', 'P', 'Y'] },
+          { pat: 'COCOON', alpha: ['C', 'N', 'O'] },
+          { pat: 'ALFALFA', alpha: ['A', 'F', 'L'] },
+          { pat: 'BARBARA', alpha: ['A', 'B', 'R'] },
+          { pat: 'TARTAR', alpha: ['A', 'R', 'T'] },
+          { pat: 'CANCAN', alpha: ['A', 'C', 'N'] },
+          { pat: 'MURMUR', alpha: ['M', 'R', 'U'] },
+          { pat: 'ENTENTE', alpha: ['E', 'N', 'T'] },
+          { pat: 'BOOBOO', alpha: ['B', 'O'] },
+        ];
+        const chosen = pickRandom(classicWords);
+        pat = chosen.pat;
+        alpha = chosen.alpha;
+      }
+
+      // Dynamically build text T of length 15–24:
+      // Includes 1–2 partial suffix matches so both Bad-Symbol & Good-Suffix are triggered,
+      // followed by a full match or near match!
+      const randChar = () => pickRandom(alpha);
+      const randStr = (len: number) => Array.from({ length: len }, randChar).join('');
+
+      // Part 1: Initial noise of 3–5 chars
+      const lead = randStr(randInt(3, 5));
+
+      // Part 2: A partial match of the last 1 or 2 chars of pattern preceded by a mismatch char
+      const kMatch = Math.min(2, Math.max(1, pat.length - 2));
+      const suffPiece = pat.slice(pat.length - kMatch);
+      const candidateMismatches = alpha.filter((x) => x !== pat[pat.length - kMatch - 1]);
+      const mismatchChar = candidateMismatches.length > 0 ? pickRandom(candidateMismatches) : randChar();
+      const partialBlock1 = randStr(randInt(1, 3)) + mismatchChar + suffPiece;
+
+      // Part 3: Middle noise + full pattern match
+      const midNoise = randStr(randInt(2, 4));
+      const hasFullMatch = Math.random() < 0.75;
+      const tail = hasFullMatch ? pat + randStr(randInt(1, 3)) : randStr(randInt(4, 7));
+
+      const text = `${lead}${partialBlock1}${midNoise}${tail}`;
+
       return {
         inputs: { text, pattern: pat },
-        summaryLabel: `Random Exam Boyer-Moore Trace: P = "${pat}", T = "${text}"`,
+        summaryLabel: `Random Exam Boyer-Moore Trace: P = "${pat}" (m = ${pat.length}), T = "${text}" (n = ${text.length})`,
       };
     }
 

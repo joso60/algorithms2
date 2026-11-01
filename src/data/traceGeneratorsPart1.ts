@@ -1097,62 +1097,83 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
 
   const steps: TraceStep[] = [];
 
-  const buildHashTables = (_activeKey?: number, activeLin?: number, activeQuad?: number, activeDbl?: number, activeChain?: number): VisualTable[] => {
+  const buildHashTables = (
+    activeKey?: number,
+    activeKIdx?: number,
+    activeLin?: number,
+    activeQuad?: number,
+    activeDbl?: number,
+    activeChain?: number
+  ): VisualTable[] => {
     const indices = Array.from({ length: m }, (_, i) => i);
-    return [
-      {
-        id: 'hash-comparison-table',
-        title: `Hash Table States (Table Size m = ${m}, H₁(x) = x mod ${m})`,
-        subtitle: `Compares Closed Hashing (Linear, Quadratic, Double Hashing) vs. Open Hashing (Separate Chaining)`,
-        colHeaders: indices.map((idx) => `Index ${idx}`),
-        rowHeaders: [
-          'Linear Probing (h + i)',
-          'Quadratic Probing (h + i²)',
-          'Double Hashing (h + i·H₂)',
-          'Separate Chaining (List)',
-        ],
-        rows: [
-          linearTable.map((v, idx) => ({
-            value: v === null ? 'Empty' : v,
-            state: idx === activeLin ? 'match' : v !== null ? 'computed' : 'unvisited',
-            editableKey: v !== null ? `lin-${idx}` : undefined,
-            expectedValue: v ?? 'Empty',
-            mistakeExplanation: `In Linear Probing, if H₁(x) is occupied, probe (H₁(x) + 1) mod ${m}, (H₁(x) + 2) mod ${m}, etc.`,
-          })),
-          quadTable.map((v, idx) => ({
-            value: v === null ? 'Empty' : v,
-            state: idx === activeQuad ? 'match' : v !== null ? 'computed' : 'unvisited',
-            editableKey: v !== null ? `quad-${idx}` : undefined,
-            expectedValue: v ?? 'Empty',
-            mistakeExplanation: `In Quadratic Probing (Lecture 06 Slide 48), probe sequence checks (h + 1²) mod ${m}, (h + 2²) mod ${m}, (h + 3²) mod ${m}.`,
-          })),
-          doubleTable.map((v, idx) => ({
-            value: v === null ? 'Empty' : v,
-            state: idx === activeDbl ? 'match' : v !== null ? 'computed' : 'unvisited',
-            editableKey: v !== null ? `dbl-${idx}` : undefined,
-            expectedValue: v ?? 'Empty',
-            mistakeExplanation: `In Double Hashing (Slide 49), step size is H₂(x) = ${m === 10 ? '4 - (x mod 2)' : '7 - (x mod 7)'}.`,
-          })),
-          chainTable.map((bucket, idx) => ({
-            value: bucket.length === 0 ? 'NULL' : bucket.join(' → '),
-            state: idx === activeChain ? 'match' : bucket.length > 0 ? 'computed' : 'unvisited',
-            editableKey: bucket.length > 0 ? `chain-${idx}` : undefined,
-            expectedValue: bucket.join(' → '),
-            mistakeExplanation: `Separate Chaining appends colliding keys to the linked list at index H₁(x) = ${idx}.`,
-          })),
-        ],
-        indexBase: `0-based indices 0 .. ${m - 1}`,
-      },
-    ];
+    const nextKeyStr =
+      activeKIdx !== undefined && activeKIdx + 1 < keys.length
+        ? ` • Next Key: x = ${keys[activeKIdx + 1]}`
+        : '';
+
+    const mainTable: VisualTable = {
+      id: 'hash-comparison-table',
+      title: `Hash Table States (Table Size m = ${m}, H₁(x) = x mod ${m})`,
+      subtitle:
+        activeKey !== undefined
+          ? `Inserting Key: x = ${activeKey} (Primary Slot H₁ = ${((activeKey % m) + m) % m})${nextKeyStr} | Keys: [${keys.join(', ')}]`
+          : `Initial Empty Table • First Key to Insert: x = ${keys[0]} | Keys: [${keys.join(', ')}]`,
+      colHeaders: indices.map((idx) => `Index ${idx}`),
+      rowHeaders: [
+        'Linear Probing (h + i)',
+        'Quadratic Probing (h + i²)',
+        'Double Hashing (h + i·H₂)',
+        'Separate Chaining (List)',
+      ],
+      rows: [
+        linearTable.map((v, idx) => ({
+          value: v === null ? 'Empty' : v,
+          state: idx === activeLin ? 'match' : v !== null ? 'computed' : 'unvisited',
+          editableKey: v !== null ? `lin-${idx}` : undefined,
+          expectedValue: v ?? 'Empty',
+          mistakeExplanation: `In Linear Probing, if H₁(x) is occupied, probe (H₁(x) + 1) mod ${m}, (H₁(x) + 2) mod ${m}, etc.`,
+        })),
+        quadTable.map((v, idx) => ({
+          value: v === null ? 'Empty' : v,
+          state: idx === activeQuad ? 'match' : v !== null ? 'computed' : 'unvisited',
+          editableKey: v !== null ? `quad-${idx}` : undefined,
+          expectedValue: v ?? 'Empty',
+          mistakeExplanation: `In Quadratic Probing (Lecture 06 Slide 48), probe sequence checks (h + 1²) mod ${m}, (h + 2²) mod ${m}, (h + 3²) mod ${m}.`,
+        })),
+        doubleTable.map((v, idx) => ({
+          value: v === null ? 'Empty' : v,
+          state: idx === activeDbl ? 'match' : v !== null ? 'computed' : 'unvisited',
+          editableKey: v !== null ? `dbl-${idx}` : undefined,
+          expectedValue: v ?? 'Empty',
+          mistakeExplanation: `In Double Hashing (Slide 49), step size is H₂(x) = ${m === 10 ? '4 - (x mod 2)' : '7 - (x mod 7)'}.`,
+        })),
+        chainTable.map((bucket, idx) => ({
+          value: bucket.length === 0 ? 'NULL' : bucket.join(' → '),
+          state: idx === activeChain ? 'match' : bucket.length > 0 ? 'computed' : 'unvisited',
+          editableKey: bucket.length > 0 ? `chain-${idx}` : undefined,
+          expectedValue: bucket.join(' → '),
+          mistakeExplanation: `Separate Chaining appends colliding keys to the linked list at index H₁(x) = ${idx}.`,
+        })),
+      ],
+      indexBase: `0-based indices 0 .. ${m - 1}`,
+    };
+
+    return [mainTable];
   };
 
   steps.push({
     stepNumber: 1,
     codeLine: 1,
-    title: `Initialize Hash Table of Size m = ${m}`,
-    explanation: `Primary hash function H₁(x) = x mod ${m}. For Double Hashing, secondary hash function is ${m === 10 ? 'H₂(x) = 4 - (x mod 2) (from Lecture 06 Slide 47)' : 'H₂(x) = 7 - (x mod 7)'}.`,
-    formula: `H₁(x) = x mod ${m}, Load Factor α = n / m = ${keys.length} / ${m} = ${(keys.length / m).toFixed(2)}`,
-    variables: { m, n: keys.length, 'Load Factor α': (keys.length / m).toFixed(2) },
+    title: `Initialize Hash Table of Size m = ${m} (First Key to Enter: x = ${keys[0]})`,
+    explanation: `Empty hash table initialized with size m = ${m}. First key to be inserted: x = ${keys[0]} (primary slot H₁(${keys[0]}) = ${keys[0]} mod ${m} = ${((keys[0] % m) + m) % m}). Keys sequence: [${keys.join(', ')}].`,
+    formula: `Next Key to Enter: x = ${keys[0]} | Keys: [${keys.join(', ')}] | Table Size m = ${m}`,
+    variables: {
+      'Next Key to Enter': keys[0],
+      'Keys Sequence': keys.join(', '),
+      'Table Size m': m,
+      'Total Keys n': keys.length,
+      'Load Factor α': (keys.length / m).toFixed(2),
+    },
     tables: buildHashTables(),
   });
 
@@ -1190,24 +1211,30 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
     // 4. Separate Chaining
     chainTable[h1].push(key);
 
+    const nextNum = kIdx + 1 < keys.length ? keys[kIdx + 1] : 'None (Completed)';
+
     steps.push({
       stepNumber: steps.length + 1,
       codeLine: linProbes > 0 ? 5 : 3,
       title: `Insert Key #${kIdx + 1}: x = ${key} (H₁(${key}) = ${h1})`,
       explanation:
-        linProbes === 0
-          ? `H₁(${key}) = ${key} mod ${m} = ${h1}. Cell ${h1} is empty! Placed directly at index ${h1} in all schemes.`
-          : `Collision at H₁(${key}) = ${h1}! Linear Probing places at (${h1} + ${linProbes}) mod ${m} = ${linIdx}. Quadratic Probing places at (${h1} + ${quadProbes}²) mod ${m} = ${quadIdx}. Double Hashing uses H₂(${key}) = ${h2} to place at (${h1} + ${dblProbes}×${h2}) mod ${m} = ${dblIdx}. Separate Chaining links ${key} into bucket ${h1}.`,
-      formula: `H₁(${key}) = ${h1}${linProbes > 0 ? ` | Quad: (${h1} + ${quadProbes}²) mod ${m} = ${quadIdx} | Double: (${h1} + ${dblProbes}·${h2}) mod ${m} = ${dblIdx}` : ''}`,
+        `Inserting key x = ${key} (Primary Slot: H₁(${key}) = ${key} mod ${m} = ${h1}). ${
+          kIdx + 1 < keys.length ? `Next key in queue: x = ${keys[kIdx + 1]}.` : 'This is the final key.'
+        } ` +
+        (linProbes === 0
+          ? `Cell ${h1} is empty! Placed directly at index ${h1} in all schemes.`
+          : `Collision at H₁(${key}) = ${h1}! Linear Probing places at (${h1} + ${linProbes}) mod ${m} = ${linIdx}. Quadratic Probing places at (${h1} + ${quadProbes}²) mod ${m} = ${quadIdx}. Double Hashing uses H₂(${key}) = ${h2} to place at (${h1} + ${dblProbes}×${h2}) mod ${m} = ${dblIdx}. Separate Chaining links ${key} into bucket ${h1}.`),
+      formula: `Entering: x = ${key} ⇒ H₁(${key}) = ${h1}${kIdx + 1 < keys.length ? ` | Next: x = ${keys[kIdx + 1]}` : ''}${linProbes > 0 ? ` | Probed to ${linIdx}` : ' | Placed directly'}`,
       variables: {
-        Key: key,
-        'H₁(x)': h1,
-        'H₂(x)': h2,
-        'Linear Idx': linIdx,
-        'Quad Idx': quadIdx,
-        'Double Idx': dblIdx,
+        'Entering Key (x)': key,
+        'Primary Slot H₁(x)': `${key} mod ${m} = ${h1}`,
+        'Next Key': nextNum,
+        'Remaining Keys': keys.slice(kIdx + 1).join(', ') || 'None (Completed)',
+        'Linear Probing': `Index ${linIdx} (${linProbes} probe${linProbes === 1 ? '' : 's'})`,
+        'Quadratic Probing': `Index ${quadIdx} (${quadProbes} probe${quadProbes === 1 ? '' : 's'})`,
+        'Double Hashing': `Index ${dblIdx} (${dblProbes} probe${dblProbes === 1 ? '' : 's'})`,
       },
-      tables: buildHashTables(key, linIdx, quadIdx, dblIdx, h1),
+      tables: buildHashTables(key, kIdx, linIdx, quadIdx, dblIdx, h1),
     });
   });
 

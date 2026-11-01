@@ -66,7 +66,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
   const [badSymbolStepIdx, setBadSymbolStepIdx] = useState(0);
   const [showGoodSuffixTrace, setShowGoodSuffixTrace] = useState(false);
   const [goodSuffixK, setGoodSuffixK] = useState(1);
-  const [goodSuffixTestShift, setGoodSuffixTestShift] = useState<number | null>(null);
 
   const safeStepIdx = Math.min(Math.max(0, currentStepIdx), Math.max(0, steps.length - 1));
   const currentStep = steps[safeStepIdx] || steps[0];
@@ -98,7 +97,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
     setBadSymbolStepIdx(0);
     setShowGoodSuffixTrace(false);
     setGoodSuffixK(1);
-    setGoodSuffixTestShift(null);
   }, [algorithm.id, selectedExampleId]);
 
   useEffect(() => {
@@ -134,7 +132,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
           setBadSymbolStepIdx((prev) => Math.min(subTraceM, prev + 1));
         } else if (isGoodSuffixTraceActive) {
           setGoodSuffixK((prev) => Math.min(subTraceM - 1, prev + 1));
-          setGoodSuffixTestShift(null);
         } else {
           setCurrentStepIdx((prev) => Math.min(Math.max(0, steps.length - 1), prev + 1));
         }
@@ -145,7 +142,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
           setBadSymbolStepIdx((prev) => Math.max(0, prev - 1));
         } else if (isGoodSuffixTraceActive) {
           setGoodSuffixK((prev) => Math.max(1, prev - 1));
-          setGoodSuffixTestShift(null);
         } else {
           setCurrentStepIdx((prev) => Math.max(0, prev - 1));
         }
@@ -1544,7 +1540,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
               disabled={safeK <= 1}
               onClick={() => {
                 setGoodSuffixK((k) => Math.max(1, k - 1));
-                setGoodSuffixTestShift(null);
               }}
               className="rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 px-3 py-1 text-xs font-semibold text-slate-200 transition cursor-pointer"
             >
@@ -1555,7 +1550,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
               disabled={safeK >= m - 1}
               onClick={() => {
                 setGoodSuffixK((k) => Math.min(m - 1, k + 1));
-                setGoodSuffixTestShift(null);
               }}
               className="rounded-lg border border-emerald-500/50 bg-emerald-600/20 hover:bg-emerald-600/30 disabled:opacity-40 px-3 py-1 text-xs font-semibold text-emerald-200 transition cursor-pointer"
             >
@@ -1576,7 +1570,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
                 type="button"
                 onClick={() => {
                   setGoodSuffixK(kVal);
-                  setGoodSuffixTestShift(null);
                 }}
                 className={`rounded-md px-3 py-1.5 font-mono text-xs transition cursor-pointer border ${
                   isSelected
@@ -2332,7 +2325,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
                 setBadSymbolStepIdx(0);
               } else if (isGoodSuffixTraceActive) {
                 setGoodSuffixK(1);
-                setGoodSuffixTestShift(null);
               } else {
                 setCurrentStepIdx(0);
               }
@@ -2357,7 +2349,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
                 setBadSymbolStepIdx((p) => Math.max(0, p - 1));
               } else if (isGoodSuffixTraceActive) {
                 setGoodSuffixK((p) => Math.max(1, p - 1));
-                setGoodSuffixTestShift(null);
               } else {
                 setCurrentStepIdx((p) => Math.max(0, p - 1));
               }
@@ -2399,7 +2390,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
                 setBadSymbolStepIdx((p) => Math.min(subTraceM, p + 1));
               } else if (isGoodSuffixTraceActive) {
                 setGoodSuffixK((p) => Math.min(subTraceM - 1, p + 1));
-                setGoodSuffixTestShift(null);
               } else {
                 setCurrentStepIdx((p) => Math.min(steps.length - 1, p + 1));
               }
@@ -2450,7 +2440,6 @@ export const TraceView: React.FC<TraceViewProps> = ({
                 value={Math.min(Math.max(1, goodSuffixK), subTraceM - 1)}
                 onChange={(e) => {
                   setGoodSuffixK(Number(e.target.value));
-                  setGoodSuffixTestShift(null);
                 }}
                 className="h-1.5 flex-1 cursor-pointer accent-emerald-500"
               />
