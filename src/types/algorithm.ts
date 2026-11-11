@@ -3,7 +3,10 @@ export type PillarMode = 'trace' | 'design' | 'analyze';
 export type ModuleCategory =
   | 'input-enhancement'
   | 'pre-structuring'
-  | 'dynamic-programming';
+  | 'dynamic-programming'
+  | 'greedy'
+  | 'iterative-improvement'
+  | 'limitations-of-power';
 
 export type AlgorithmId =
   | 'comparison-counting-sort'
@@ -23,7 +26,18 @@ export type AlgorithmId =
   | 'knapsack-01'
   | 'obst'
   | 'warshall'
-  | 'floyd';
+  | 'floyd'
+  | 'greedy-change-making'
+  | 'prim'
+  | 'kruskal'
+  | 'dijkstra'
+  | 'huffman'
+  | 'simplex'
+  | 'max-flow'
+  | 'bipartite-matching'
+  | 'stable-marriage'
+  | 'backtracking'
+  | 'branch-and-bound';
 
 export type SyllabusStatus = 'required' | 'partial-exclusion' | 'excluded';
 
@@ -94,6 +108,49 @@ export interface GraphEdgeView {
   to: string;
   weight?: number;
   highlight?: boolean;
+  state?: 'default' | 'tree' | 'candidate' | 'selected' | 'rejected' | 'relaxed';
+  label?: string;
+}
+
+export interface HuffmanTreeNodeView {
+  id: string;
+  weight: number;
+  weightLabel: string;
+  symbol?: string; // present on leaf nodes
+  code?: string; // binary codeword from root
+  highlight?: 'active' | 'merged-child' | 'new-parent' | 'default';
+  left?: HuffmanTreeNodeView | null;
+  right?: HuffmanTreeNodeView | null;
+}
+
+export interface HuffmanStepView {
+  phase: 'init' | 'sort' | 'merge' | 'codes' | 'encode-decode';
+  forestQueue: HuffmanTreeNodeView[]; // ordered trees in the priority queue
+  mergingPairIds?: [string, string];
+  newMergedNodeId?: string;
+  fixedLengthTree?: HuffmanTreeNodeView | null;
+  codewords?: {
+    symbol: string;
+    weightLabel: string;
+    probability: number;
+    huffmanCode: string;
+    huffmanBits: number;
+    fixedCode: string;
+    fixedBits: number;
+  }[];
+  avgBitsPerSymbol?: string;
+  fixedBitsPerSymbol?: number;
+  compressionRatio?: string;
+  encodeDemo?: {
+    plainText: string;
+    segments: { symbol: string; code: string }[];
+    encodedBits: string;
+  };
+  decodeDemo?: {
+    bitStream: string;
+    segments: { bits: string; symbol: string }[];
+    decodedText: string;
+  };
 }
 
 export interface OBSTTreeNodeView {
@@ -118,6 +175,35 @@ export interface OBSTTreeConstructionView {
   expectedCost: number;
 }
 
+export interface StateSpaceTreeNodeView {
+  id: string;
+  parentId?: string | null;
+  edgeLabel?: string; // e.g., "w/ 2", "w/o 2", "a→1", "Q1 at col 2"
+  mainLabel: string; // e.g., "0", "2", "w=3, v=11"
+  subLabel?: string; // e.g., "ub = 16.34", "lb = 13", "6+7 > 10"
+  title?: string;
+  subtitle?: string;
+  detail?: string;
+  boundLabel?: string;
+  nodeOrder?: number; // order of creation / visit
+  status: 'active' | 'promising' | 'pruned' | 'solution' | 'visited';
+  pruneReason?: string; // e.g., "X (w=6 > 5)", "X (6+7 > 10)"
+  level: number; // 0..n
+  xPercent: number; // 0..100 horizontal layout position
+}
+
+export interface StateSpaceTreeView {
+  title: string;
+  subtitle?: string;
+  mode: 'backtracking' | 'branch-and-bound';
+  problemType?: string;
+  nodes: StateSpaceTreeNodeView[];
+  liveNodesLabel?: string;
+  bestSolutionLabel?: string;
+  pruningRuleNote?: string;
+  operationNote?: string;
+}
+
 export interface TraceStep {
   stepNumber: number;
   codeLine: number; // 1-based line in pseudocode
@@ -128,6 +214,8 @@ export interface TraceStep {
   tables: VisualTable[];
   stringView?: StringAlignmentView;
   obstTreeView?: OBSTTreeConstructionView;
+  huffmanView?: HuffmanStepView;
+  stateSpaceTreeView?: StateSpaceTreeView;
   bTreeView?: {
     order: number;
     minKeys: number;
@@ -143,8 +231,27 @@ export interface TraceStep {
     activeK?: string;
     activeI?: string;
     activeJ?: string;
+    nodePositions?: Record<string, { x: number; y: number }>;
+    nodeStates?: Record<string, 'default' | 'in-tree' | 'active' | 'fringe' | 'source'>;
+    nodeBadges?: Record<string, string>;
+    vtLabel?: string;
+    etLabel?: string;
+    queueLabel?: string;
+    totalWeight?: number | string;
+    caption?: string;
   };
   outputString?: string; // e.g. POP output or LCS output
+}
+
+export interface ExamPaperSimulationInfo {
+  examPaper?: string; // e.g. "Fall 2025 Final Exam — Q6 (12 Marks)"
+  examTitle?: string;
+  examType?: 'Midterm' | 'Final';
+  marks?: string;
+  questionStatement?: string;
+  questionText?: string;
+  subQuestions?: string[];
+  requiredStepsGuide?: string[];
 }
 
 export interface AlgorithmExample {
@@ -154,6 +261,7 @@ export interface AlgorithmExample {
   description: string;
   inputSummary: string;
   customInputDefaults: Record<string, string>;
+  examSimulation?: ExamPaperSimulationInfo;
 }
 
 export interface DesignStepInfo {
@@ -206,6 +314,8 @@ export interface AlgorithmMeta {
   indexingRule: string;
   midtermCount?: number;
   midtermPapers?: string[];
+  finalCount?: number;
+  finalPapers?: string[];
   syllabusInfo?: SyllabusExclusionInfo;
   summary: string;
   pseudocodeTitle: string;

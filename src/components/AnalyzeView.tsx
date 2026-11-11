@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { AlgorithmMeta } from '../types/algorithm';
+import { EXAM_LOOP_SUMMATION_PROBLEMS } from '../data/curriculumIndex';
 import {
   Activity,
   Cpu,
@@ -270,6 +271,177 @@ const SIMPLE_SOLVED_EXAMPLES: SimpleSolvedExample[] = [
   },
 ];
 
+interface PastExamComplexityQuestion {
+  id: string;
+  examType: 'M' | 'F';
+  examPaper: string;
+  marks: string;
+  title: string;
+  questionPrompt: string;
+  codeOrFormulaBlock: string;
+  howToSolveSteps: string[];
+  finalAnswer: string;
+}
+
+const PAST_EXAM_COMPLEXITY_QUESTIONS: PastExamComplexityQuestion[] = [
+  ...EXAM_LOOP_SUMMATION_PROBLEMS.map((p) => {
+    const isFinal = p.examSource.toLowerCase().includes('final');
+    return {
+      id: p.id,
+      examType: (isFinal ? 'F' : 'M') as 'M' | 'F',
+      examPaper: p.examSource,
+      marks: '4 Marks',
+      title: p.title,
+      questionPrompt:
+        'Find the exact Basic Operation, set up the Summation C(n), and derive the Worst-Case and Best-Case time complexity class for the following exam pseudocode:',
+      codeOrFormulaBlock: p.pseudocode.join('\n'),
+      howToSolveSteps: [
+        `Identify Basic Operation: ${p.basicOp} (Input Parameter: ${p.inputParam})`,
+        ...p.steps.map((st) => `${st.lineTitle}: ${st.equation} (${st.explanation})`),
+      ],
+      finalAnswer: p.finalResult,
+    };
+  }),
+  {
+    id: 'm-winter2023-q3-btree-height-bound',
+    examType: 'M',
+    examPaper: 'Winter 2023 MidTerm Q3 & Fall 2023 MidTerm Q2',
+    marks: '4 Marks',
+    title: 'B-Tree Height Upper Bound & Disk Access Complexity O(log_m n)',
+    questionPrompt:
+      'For a B-Tree of order m containing n keys, state the upper bound formula for its height h and explain why B-Tree search, insertion, and deletion all run in Θ(log n) time.',
+    codeOrFormulaBlock: `Height Upper Bound of B-Tree (Order m, n Keys):
+  h ≤ ⌊ log_{⌈m/2⌉} ((n + 1) / 2) ⌋ + 1
+
+Minimum Keys by Level (Root = Level 1):
+  Level 1 (Root): ≥ 1 key (≥ 2 children)
+  Level 2:        ≥ 2 · (⌈m/2⌉ - 1) keys
+  Level 3:        ≥ 2 · ⌈m/2⌉ · (⌈m/2⌉ - 1) keys
+  Total n ≥ 2 · ⌈m/2⌉^(h - 1) - 1`,
+    howToSolveSteps: [
+      'Step 1: Count minimum nodes at each level when every non-root internal node has the minimum allowed children c = ⌈m/2⌉ (and the root has 2 children).',
+      'Step 2: Sum the minimum number of keys across levels 1 to h using the finite geometric series formula: n ≥ 1 + 2(c - 1)(1 + c + c² + ... + c^{h-2}) = 2·c^{h-1} - 1.',
+      'Step 3: Solve for height h: c^{h-1} ≤ (n + 1)/2 ⇒ h ≤ ⌊log_{⌈m/2⌉}((n + 1)/2)⌋ + 1.',
+      'Step 4: Since the number of disk page reads is proportional to height h, Search, Insert, and Delete all take O(log_m n) = O(log n) worst-case time.',
+    ],
+    finalAnswer: 'Height h ≤ ⌊log_{⌈m/2⌉}((n + 1)/2)⌋ + 1 ∈ O(log_m n)',
+  },
+  {
+    id: 'f-winter2023-q1a-hashing-complexity',
+    examType: 'F',
+    examPaper: 'Winter 2023 Final Exam Q1(a)',
+    marks: '4 Marks',
+    title: 'Open vs. Closed Hashing Load Factor α & Average Probe Complexity',
+    questionPrompt:
+      'Define the load factor α for a hash table of size m storing n keys, and compare the average number of probes for successful (S) and unsuccessful (U) searches in Open Hashing (Separate Chaining) vs. Closed Hashing (Linear Probing).',
+    codeOrFormulaBlock: `Load Factor:  α = n / m
+Open Hashing (Separate Chaining):
+  • Successful Search:   S ≈ 1 + α / 2    ∈ Θ(1) if α ≈ 1
+  • Unsuccessful Search: U = α            ∈ Θ(1) if α ≈ 1
+Closed Hashing (Linear Probing, requires α < 1):
+  • Successful Search:   S ≈ ½ (1 + 1 / (1 - α))
+  • Unsuccessful Search: U ≈ ½ (1 + 1 / (1 - α)²)`,
+    howToSolveSteps: [
+      'Step 1: Define Load Factor α = n / m (ratio of stored keys n to hash table size m).',
+      'Step 2: In Open Hashing (Separate Chaining), average chain length is α. An unsuccessful search scans all α nodes in a bucket (U = α), while a successful search scans 1 + α/2 nodes on average.',
+      'Step 3: In Closed Hashing (Linear Probing), α must be ≤ 1, and as α approaches 1, primary clustering causes probe counts to grow rapidly proportional to 1/(1 - α)².',
+      'Step 4: State Worst-Case Complexity: If all n keys collide into the same bucket/cluster, both Open and Closed Hashing degrade to Θ(n) in the worst case.',
+    ],
+    finalAnswer: 'Avg: Θ(1) for constant α | Worst-Case: Θ(n)',
+  },
+  {
+    id: 'f-spring2021-q2-q4a-dijkstra-prim-complexity',
+    examType: 'F',
+    examPaper: 'Spring 2021 Final Exam Q2 & Q4(a)',
+    marks: '6 Marks',
+    title: 'Dijkstra’s & Prim’s Time Complexity: Adjacency Matrix + Array vs. Adjacency List + Min-Heap',
+    questionPrompt:
+      'Analyze and compare the time efficiency of Prim’s MST algorithm and Dijkstra’s Single-Source Shortest-Path algorithm under two implementations: (1) Weight Matrix + Unordered Array Priority Queue, and (2) Adjacency Linked Lists + Binary Min-Heap Priority Queue.',
+    codeOrFormulaBlock: `Implementation 1: Weight Matrix + Unordered Array PQ
+  • Find min vertex u* (|V| times):  |V| × O(|V|) = Θ(|V|²)
+  • Scan row of u* to update keys:   |V| × O(|V|) = Θ(|V|²)
+  ⇒ Total Time Complexity = Θ(|V|²)
+
+Implementation 2: Adjacency Lists + Binary Min-Heap PQ
+  • |V| DeleteMin(Q) operations:     |V| × O(log |V|) = O(|V| log |V|)
+  • |E| DecreaseKey(Q) relaxations:  |E| × O(log |V|) = O(|E| log |V|)
+  ⇒ Total Time Complexity = O((|V| + |E|) log |V|) = O(|E| log |V|) (for connected graphs)`,
+    howToSolveSteps: [
+      'Step 1: Break total work into two parts: (A) extracting the minimum-key fringe vertex u* from Q exactly |V| times, and (B) inspecting/relaxing incident edges (u*, u) and updating keys in Q across all edges.',
+      'Step 2: With a Weight Matrix and Unordered Array PQ, each DeleteMin scans all remaining vertices in O(|V|) time (total Θ(|V|²)), and scanning row u* of the matrix takes Θ(|V|) per vertex (total Θ(|V|²)). Total = Θ(|V|²).',
+      'Step 3: With Adjacency Lists and a Binary Min-Heap PQ, each of the |V| DeleteMin calls takes O(log |V|) time, and each of the |E| edge relaxations triggers at most one Decrease(Q, u, d_u) in O(log |V|) time.',
+      'Step 4: Sum both contributions: O(|V| log |V| + |E| log |V|) = O(|E| log |V|) for connected graphs where |E| ≥ |V| - 1.',
+    ],
+    finalAnswer: 'Matrix + Array: Θ(|V|²)  |  Adj List + Min-Heap: O(|E| log |V|)',
+  },
+  {
+    id: 'f-fall2025cfe-q2c-knapsack-pseudopolynomial',
+    examType: 'F',
+    examPaper: 'Fall 2025 CFE Final Exam Q2(c)',
+    marks: '4 Marks',
+    title: 'Why Dynamic Programming 0-1 Knapsack Θ(nW) is Pseudo-Polynomial (Not Polynomial in Input Size)',
+    questionPrompt:
+      'The Dynamic Programming algorithm for the 0-1 Knapsack problem fills a table F[0..n, 0..W] in Θ(nW) time and Θ(nW) space. Explain why Θ(nW) is considered pseudo-polynomial (exponential in the binary encoding length of W) rather than a true polynomial-time algorithm.',
+    codeOrFormulaBlock: `DP Table Size & Time:  Θ(n · W)
+Binary Input Size of Capacity W:
+  b = ⌊log₂ W⌋ + 1 bits   ⇒   W ≈ 2^b
+Expressing Time Complexity in terms of bit-length b:
+  Θ(n · W) = Θ(n · 2^b)   (Exponential in the number of bits b!)`,
+    howToSolveSteps: [
+      'Step 1: State the time and space efficiency of filling F[0..n, 0..W]: each of the n × W cells takes O(1) time using max(F[i-1, j], vᵢ + F[i-1, j - wᵢ]), giving Θ(nW) time and Θ(nW) space.',
+      'Step 2: Recall how formal computational complexity measures input size: a numerical input W is encoded in binary using b = ⌊log₂ W⌋ + 1 bits.',
+      'Step 3: Express W in terms of its bit-length b: W = Θ(2^b).',
+      'Step 4: Substitute W = 2^b into Θ(nW) to get Θ(n · 2^b), which grows exponentially with the binary length b of W! Hence 0-1 Knapsack remains NP-Hard and Θ(nW) is called pseudo-polynomial.',
+    ],
+    finalAnswer: 'Time = Θ(nW) = Θ(n · 2^{log₂ W}) — Pseudo-Polynomial (Exponential in bit-length of W)',
+  },
+  {
+    id: 'f-fall2025cfe-q3b-kruskal-union-find-complexity',
+    examType: 'F',
+    examPaper: 'Fall 2025 CFE Final Exam Q3(b)',
+    marks: '4 Marks',
+    title: 'Kruskal’s Algorithm Complexity Breakdown & Disjoint-Set (Union-Find) Efficiency',
+    questionPrompt:
+      'Break down the time complexity of each phase of Kruskal’s Minimum Spanning Tree algorithm on a graph G = (V, E) when using Disjoint Subsets (Union-Find) for cycle detection.',
+    codeOrFormulaBlock: `Phase 1 (Sorting |E| Edges by Weight):
+  T_sort = O(|E| log |E|)
+Phase 2 (Initializing |V| Disjoint Singleton Sets):
+  T_init = Θ(|V|)   (MakeSet(v) for each v ∈ V)
+Phase 3 (Scanning ≤ |E| Edges with Find & Union):
+  Up to 2|E| Find operations + (|V| - 1) Union operations ≈ O(|E| α(|V|)) ≪ O(|E| log |E|)
+Total Time Complexity:
+  T_total = O(|E| log |E|) = O(|E| log |V|)   (since |E| ≤ |V|² ⇒ log |E| ≤ 2 log |V|)`,
+    howToSolveSteps: [
+      'Step 1: Analyze Phase 1 (Sorting): Sorting the |E| edges in non-decreasing order of weight takes O(|E| log |E|) time.',
+      'Step 2: Analyze Phase 2 (MakeSet initialization): Putting each of the |V| vertices into its own disjoint subset takes Θ(|V|) time.',
+      'Step 3: Analyze Phase 3 (Cycle checks via Find & Union): For each inspected edge (u, v), we check `Find(u) ≠ Find(v)` and perform at most |V| - 1 `Union(u, v)` operations. With union-by-rank/size and path compression, all 2|E| Finds and |V|-1 Unions take nearly linear O(|E| log* |V|) time.',
+      'Step 4: Conclude that sorting dominates the runtime: O(|E| log |E|) = O(|E| log |V|) because |E| < |V|² implies log |E| = O(log |V|).',
+    ],
+    finalAnswer: 'Dominated by Edge Sorting: O(|E| log |E|) = O(|E| log |V|)',
+  },
+  {
+    id: 'f-warshall-floyd-obst-cubic-complexity',
+    examType: 'F',
+    examPaper: 'Fall 2025 CFE Final Q2(b) & Question Pool',
+    marks: '4 Marks',
+    title: 'Why Warshall’s, Floyd’s, Matrix Chain (MCM), and OBST All Run in Cubic Θ(n³) Time',
+    questionPrompt:
+      'Derive the time and space complexity of Floyd’s (and Warshall’s) algorithm and compare its triple nested loop summation with the diagonal triple loop summation of Matrix Chain Multiplication (MCM) and Optimal BST (OBST).',
+    codeOrFormulaBlock: `1. Warshall & Floyd (3 Full Loops k, i, j from 1 to n):
+   C(n) = ∑_{k=1}^n ∑_{i=1}^n ∑_{j=1}^n 1 = n × n × n = n³ ∈ Θ(n³) Time, Θ(n²) Space
+
+2. Matrix Chain (MCM) & Optimal BST (OBST) (Diagonal Loops):
+   C(n) = ∑_{l=2}^n ∑_{i=1}^{n-l+1} ∑_{k=i}^{i+l-2} 1 = ∑_{l=2}^n (n - l + 1)(l - 1)
+        = (n³ - n) / 6 ≈ ⅙ n³ ∈ Θ(n³) Time, Θ(n²) Space`,
+    howToSolveSteps: [
+      'Step 1: For Warshall and Floyd, three nested loops (k = 1..n, i = 1..n, j = 1..n) execute 1 constant-time update per inner iteration, giving C(n) = n³ ∈ Θ(n³) time and Θ(n²) space (since matrices overwrite in-place).',
+      'Step 2: For MCM and OBST, the outer loop runs over chain length l = 2..n, the middle loop runs over start index i = 1..n-l+1, and the inner loop tests split points k = i..j-1 (or i..j).',
+      'Step 3: Evaluating ∑_{l=2}^n (n - l + 1)(l - 1) using the sum of squares formula yields (n³ - n)/6 ∈ Θ(n³) time and Θ(n²) table space.',
+    ],
+    finalAnswer: 'All four algorithms run in Cubic Time Θ(n³) and Quadratic Space Θ(n²)',
+  },
+];
+
 /**
  * Renders a stacked, hand-written style summation sign:
  *      upper
@@ -421,14 +593,61 @@ for k ← ${lo} to ${safeHi} do
   );
 };
 
-export const AnalyzeView: React.FC<AnalyzeViewProps> = () => {
+export const AnalyzeView: React.FC<AnalyzeViewProps> = ({ algorithm }) => {
   const [selectedExampleId, setSelectedExampleId] = useState<string>(SIMPLE_SOLVED_EXAMPLES[0].id);
+  const [examFilter, setExamFilter] = useState<'all' | 'M' | 'F'>('all');
 
   const activeExample =
     SIMPLE_SOLVED_EXAMPLES.find((ex) => ex.id === selectedExampleId) || SIMPLE_SOLVED_EXAMPLES[0];
 
+  const midtermAnalysisCount = PAST_EXAM_COMPLEXITY_QUESTIONS.filter((q) => q.examType === 'M').length;
+  const finalAnalysisCount = PAST_EXAM_COMPLEXITY_QUESTIONS.filter((q) => q.examType === 'F').length;
+  const filteredExamComplexityQuestions = PAST_EXAM_COMPLEXITY_QUESTIONS.filter((q) => {
+    if (examFilter === 'M') return q.examType === 'M';
+    if (examFilter === 'F') return q.examType === 'F';
+    return true;
+  });
+
   return (
     <div className="space-y-6">
+      {/* General Exam Analysis Hub Header (General Exam Solving Guide & Methodology) */}
+      <div className="rounded-2xl border border-indigo-500/35 bg-slate-900/95 p-5 sm:p-6 space-y-4 shadow-lg">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-indigo-500/20 border border-indigo-500/40 px-2.5 py-0.5 font-mono text-xs font-bold text-indigo-300">
+                General Exam Analysis Guide
+              </span>
+              <span className="rounded-md bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-300">
+                {PAST_EXAM_COMPLEXITY_QUESTIONS.length} Past Exam Questions
+              </span>
+              <span className="rounded-md bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 font-mono text-xs font-semibold text-emerald-300">
+                Summations &amp; Loop Analysis
+              </span>
+            </div>
+            <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              Official Exam Algorithm Analysis &amp; Complexity Solving Guide
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl">
+              Comprehensive solving guide for all CPCS-324 algorithm analysis &amp; mathematical complexity questions (Midterm &amp; Final exams): loop unwinding procedures, essential summation formulas, and formal asymptotic order derivations.
+            </p>
+          </div>
+
+          {/* Quick Methodology Steps Card */}
+          <div className="shrink-0 flex flex-wrap lg:flex-col gap-2 font-mono text-xs">
+            <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-slate-200">
+              <strong className="text-indigo-300">Step 1:</strong> Identify Basic Op &amp; Loop Bounds
+            </div>
+            <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-slate-200">
+              <strong className="text-amber-300">Step 2:</strong> Set Up the Summation Σ
+            </div>
+            <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-slate-200">
+              <strong className="text-emerald-300">Step 3:</strong> Solve Series &amp; Deduce Θ(g(n))
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* SECTION 1: Quick Summary of Analysis Rules & Summation Laws (From Lecture Slides 01 & 02) */}
       <div className="rounded-2xl border border-indigo-500/30 bg-slate-900/90 p-5 sm:p-6 space-y-5 shadow-lg">
         <div className="border-b border-slate-800 pb-3.5 flex flex-wrap items-center justify-between gap-2">
@@ -688,6 +907,145 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* SECTION 3: Official Past Midterm (M) & Final (F) Exam Complexity & Loop Summation Archive */}
+      <div className="rounded-2xl border-2 border-amber-500/35 bg-slate-900/95 p-5 sm:p-6 space-y-5 shadow-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-indigo-500/20 border border-indigo-500/40 px-2.5 py-0.5 font-mono text-xs font-bold uppercase text-indigo-300">
+                Official Past Exam Analysis Archive
+              </span>
+              <span className="rounded-md bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 font-mono text-xs font-extrabold text-amber-300">
+                M: {midtermAnalysisCount} Midterm Analysis Questions
+              </span>
+              <span className="rounded-md bg-rose-500/20 border border-rose-500/40 px-2.5 py-0.5 font-mono text-xs font-extrabold text-rose-300">
+                F: {finalAnalysisCount} Final Analysis Questions
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-white mt-2">
+              All Past Midterm &amp; Final Exam Loop Analysis &amp; Complexity Questions, Solutions &amp; How-To-Solve Guides
+            </h3>
+            <p className="text-xs text-slate-300 mt-1">
+              Every loop summation (`Mystry`, `MatrixPuzzle`, `GreedyChange`, geometric loops) and theoretical complexity question from the CPCS-324 Midterm and Final exam papers, with full step-by-step derivations.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setExamFilter('all')}
+              className={`rounded-lg border px-3 py-1.5 font-mono text-xs font-bold transition cursor-pointer ${
+                examFilter === 'all'
+                  ? 'border-indigo-400 bg-indigo-500/25 text-white'
+                  : 'border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700'
+              }`}
+            >
+              All Exam Qs ({PAST_EXAM_COMPLEXITY_QUESTIONS.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setExamFilter('M')}
+              className={`rounded-lg border px-3 py-1.5 font-mono text-xs font-bold transition cursor-pointer ${
+                examFilter === 'M'
+                  ? 'border-amber-400 bg-amber-500/25 text-amber-200'
+                  : 'border-slate-800 bg-slate-950 text-amber-300/80 hover:border-slate-700'
+              }`}
+            >
+              M: Midterm ({midtermAnalysisCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setExamFilter('F')}
+              className={`rounded-lg border px-3 py-1.5 font-mono text-xs font-bold transition cursor-pointer ${
+                examFilter === 'F'
+                  ? 'border-rose-400 bg-rose-500/25 text-rose-200'
+                  : 'border-slate-800 bg-slate-950 text-rose-300/80 hover:border-slate-700'
+              }`}
+            >
+              F: Final ({finalAnalysisCount})
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {filteredExamComplexityQuestions.map((eq, idx) => (
+            <div
+              key={eq.id}
+              className="rounded-xl border border-slate-800 bg-slate-950/85 p-5 space-y-4 hover:border-slate-700 transition"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800/80 pb-3">
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded px-2 py-0.5 font-mono text-xs font-extrabold ${
+                        eq.examType === 'F'
+                          ? 'bg-rose-500/25 text-rose-200 border border-rose-400/50'
+                          : 'bg-amber-500/25 text-amber-200 border border-amber-400/50'
+                      }`}
+                    >
+                      {eq.examType === 'F' ? `F #${idx + 1}: Final Exam` : `M #${idx + 1}: Midterm Exam`}
+                    </span>
+                    <span className="rounded border border-slate-700 bg-slate-900 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-300">
+                      {eq.examPaper}
+                    </span>
+                    <span className="rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-bold text-emerald-300">
+                      {eq.marks}
+                    </span>
+                  </div>
+                  <h4 className="text-sm sm:text-base font-bold text-white pt-1">{eq.title}</h4>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                <div className="lg:col-span-5 space-y-3">
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-950/15 p-3">
+                    <div className="font-mono text-[11px] font-bold uppercase text-amber-300 mb-1">
+                      Exam Question Prompt:
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed">{eq.questionPrompt}</p>
+                  </div>
+                  <pre className="rounded-lg border border-slate-800 bg-slate-900 p-3.5 font-mono text-xs text-amber-200 whitespace-pre-wrap overflow-x-auto leading-relaxed">
+                    <MathLine text={eq.codeOrFormulaBlock} />
+                  </pre>
+                </div>
+
+                <div className="lg:col-span-7 space-y-3">
+                  <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-4 space-y-2.5">
+                    <div className="font-mono text-xs font-bold uppercase tracking-wider text-indigo-300">
+                      How to Solve Step-by-Step on the Exam:
+                    </div>
+                    <ul className="space-y-2 text-xs text-slate-200 leading-relaxed">
+                      {eq.howToSolveSteps.map((st, sIdx) => (
+                        <li key={sIdx} className="flex items-start gap-2">
+                          <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-indigo-500/25 border border-indigo-400/50 font-mono text-[10px] font-bold text-indigo-200">
+                            {sIdx + 1}
+                          </span>
+                          <span className="font-mono">
+                            <MathLine text={st} />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-lg border border-emerald-500/50 bg-emerald-950/30 px-4 py-3 flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                    <div>
+                      <div className="font-mono text-[10px] uppercase tracking-wider text-emerald-300">
+                        Official Exam Final Answer
+                      </div>
+                      <div className="font-mono text-xs sm:text-sm font-bold text-white mt-0.5">
+                        <MathLine text={eq.finalAnswer} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

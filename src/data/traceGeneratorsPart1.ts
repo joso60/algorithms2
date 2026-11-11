@@ -1084,21 +1084,73 @@ export function generateBoyerMooreSteps(text: string, pattern: string): TraceSte
 // 6. HASHING (Open Hashing / Separate Chaining & Closed Hashing / Probing)
 // ============================================================================
 export function generateHashingSteps(keysStr: string, sizeStr: string): TraceStep[] {
-  const keys = keysStr
+  const rawTokens = keysStr
     .split(/[\s,]+/)
-    .map((s) => Number(s.trim()))
-    .filter((n) => !isNaN(n));
+    .map((s) => s.trim())
+    .filter(Boolean);
   const m = Math.max(3, Math.min(31, Number(sizeStr) || 10));
 
-  const linearTable: (number | null)[] = new Array(m).fill(null);
-  const quadTable: (number | null)[] = new Array(m).fill(null);
-  const doubleTable: (number | null)[] = new Array(m).fill(null);
-  const chainTable: number[][] = Array.from({ length: m }, () => []);
+  // Support both numeric keys and string-folding keys (e.g. Winter 2023 Final Q1b: HARAM, MASJID, SALE, ZAM, EXAM, FINAL)
+  interface ParsedHashKey {
+    label: string;
+    numVal: number;
+    isStringKey: boolean;
+    charCodesStr?: string;
+    foldingDetail?: string;
+  }
+
+  const computeStringFolding = (word: string): { hashVal: number; charCodesStr: string; foldingDetail: string } => {
+    const upper = word.toUpperCase();
+    const codes = upper.split('').map((ch) => Math.max(0, ch.charCodeAt(0) - 65));
+    const charCodesStr = upper.split('').map((ch, i) => `${ch}=${codes[i]}`).join(', ');
+    // Known Winter 2023 Final Q1b folding values or general digit-pair folding
+    const digitStr = codes.join('');
+    // Fold from right in 2-digit chunks, then sum digits until < m
+    const chunks: number[] = [];
+    for (let i = digitStr.length; i > 0; i -= 2) {
+      chunks.unshift(Number(digitStr.slice(Math.max(0, i - 2), i)));
+    }
+    let sum = chunks.reduce((a, b) => a + b, 0);
+    const firstSum = sum;
+    while (sum >= m) {
+      sum = String(sum)
+        .split('')
+        .reduce((a, d) => a + Number(d), 0);
+    }
+    return {
+      hashVal: sum % m,
+      charCodesStr,
+      foldingDetail: `${digitStr} → ${chunks.join(' + ')} = ${firstSum} → h = ${sum % m}`,
+    };
+  };
+
+  const parsedKeys: ParsedHashKey[] = rawTokens.map((tok) => {
+    const asNum = Number(tok);
+    if (!isNaN(asNum)) {
+      return { label: String(asNum), numVal: asNum, isStringKey: false };
+    }
+    const folded = computeStringFolding(tok);
+    return {
+      label: `${tok.toUpperCase()} (${folded.hashVal})`,
+      numVal: folded.hashVal,
+      isStringKey: true,
+      charCodesStr: folded.charCodesStr,
+      foldingDetail: folded.foldingDetail,
+    };
+  });
+
+  if (parsedKeys.length === 0) return [];
+  const hasStringKeys = parsedKeys.some((k) => k.isStringKey);
+
+  const linearTable: (string | null)[] = new Array(m).fill(null);
+  const quadTable: (string | null)[] = new Array(m).fill(null);
+  const doubleTable: (string | null)[] = new Array(m).fill(null);
+  const chainTable: string[][] = Array.from({ length: m }, () => []);
 
   const steps: TraceStep[] = [];
 
   const buildHashTables = (
-    activeKey?: number,
+    activeKey?: ParsedHashKey,
     activeKIdx?: number,
     activeLin?: number,
     activeQuad?: number,
@@ -1107,17 +1159,34 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
   ): VisualTable[] => {
     const indices = Array.from({ length: m }, (_, i) => i);
     const nextKeyStr =
-      activeKIdx !== undefined && activeKIdx + 1 < keys.length
-        ? ` • Next Key: x = ${keys[activeKIdx + 1]}`
+      activeKIdx !== undefined && activeKIdx + 1 < parsedKeys.length
+        ? ` • Next Key: ${parsedKeys[activeKIdx + 1].label}`
         : '';
+
+    const tables: VisualTable[] = [];
+
+    if (hasStringKeys) {
+      tables.push({
+        id: 'hash-string-folding-table',
+        title: 'Step 1 Preprocessing: Alphabet Mapping (A=0..Z=25) & Digit Folding Hash Function',
+        subtitle: 'Winter 2023 Final Exam Q1(b): Convert letters to numbers (A=0, B=1, ..., Z=25) and apply Folding Method',
+        colHeaders: ['Word Key', 'Letter-to-Number Mapping (A=0..Z=25)', 'Folding Calculation', 'Primary Hash h(K)'],
+        rows: parsedKeys.map((pk, idx) => [
+          { value: pk.label.split(' ')[0], state: activeKIdx === idx ? 'active' : 'default' },
+          { value: pk.charCodesStr || '-', state: activeKIdx === idx ? 'compare' : 'default' },
+          { value: pk.foldingDetail || '-', state: activeKIdx === idx ? 'compare' : 'default' },
+          { value: pk.numVal, state: activeKIdx === idx ? 'match' : 'computed' },
+        ]),
+      });
+    }
 
     const mainTable: VisualTable = {
       id: 'hash-comparison-table',
       title: `Hash Table States (Table Size m = ${m}, H₁(x) = x mod ${m})`,
       subtitle:
         activeKey !== undefined
-          ? `Inserting Key: x = ${activeKey} (Primary Slot H₁ = ${((activeKey % m) + m) % m})${nextKeyStr} | Keys: [${keys.join(', ')}]`
-          : `Initial Empty Table • First Key to Insert: x = ${keys[0]} | Keys: [${keys.join(', ')}]`,
+          ? `Inserting Key: ${activeKey.label} (Primary Slot H₁ = ${((activeKey.numVal % m) + m) % m})${nextKeyStr}`
+          : `Initial Empty Table • First Key to Insert: ${parsedKeys[0].label}`,
       colHeaders: indices.map((idx) => `Index ${idx}`),
       rowHeaders: [
         'Linear Probing (h + i)',
@@ -1158,26 +1227,27 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
       indexBase: `0-based indices 0 .. ${m - 1}`,
     };
 
-    return [mainTable];
+    tables.push(mainTable);
+    return tables;
   };
 
   steps.push({
     stepNumber: 1,
     codeLine: 1,
-    title: `Initialize Hash Table of Size m = ${m} (First Key to Enter: x = ${keys[0]})`,
-    explanation: `Empty hash table initialized with size m = ${m}. First key to be inserted: x = ${keys[0]} (primary slot H₁(${keys[0]}) = ${keys[0]} mod ${m} = ${((keys[0] % m) + m) % m}). Keys sequence: [${keys.join(', ')}].`,
-    formula: `Next Key to Enter: x = ${keys[0]} | Keys: [${keys.join(', ')}] | Table Size m = ${m}`,
+    title: `Initialize Hash Table of Size m = ${m} (First Key: ${parsedKeys[0].label})`,
+    explanation: `Empty hash table initialized with size m = ${m}. First key to be inserted: ${parsedKeys[0].label} (primary slot H₁ = ${((parsedKeys[0].numVal % m) + m) % m}). Keys sequence: [${parsedKeys.map((k) => k.label).join(', ')}].`,
+    formula: `Next Key: ${parsedKeys[0].label} | Table Size m = ${m}`,
     variables: {
-      'Next Key to Enter': keys[0],
-      'Keys Sequence': keys.join(', '),
+      'Next Key to Enter': parsedKeys[0].label,
       'Table Size m': m,
-      'Total Keys n': keys.length,
-      'Load Factor α': (keys.length / m).toFixed(2),
+      'Total Keys n': parsedKeys.length,
+      'Load Factor α': (parsedKeys.length / m).toFixed(2),
     },
     tables: buildHashTables(),
   });
 
-  keys.forEach((key, kIdx) => {
+  parsedKeys.forEach((pk, kIdx) => {
+    const key = pk.numVal;
     const h1 = ((key % m) + m) % m;
     const h2 = m === 10 ? 4 - (key % 2) : 7 - (key % 7);
 
@@ -1188,7 +1258,7 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
       linProbes++;
       linIdx = (h1 + linProbes) % m;
     }
-    linearTable[linIdx] = key;
+    linearTable[linIdx] = pk.label;
 
     // 2. Quadratic
     let quadIdx = h1;
@@ -1197,7 +1267,7 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
       quadProbes++;
       quadIdx = (h1 + quadProbes * quadProbes) % m;
     }
-    quadTable[quadIdx] = key;
+    quadTable[quadIdx] = pk.label;
 
     // 3. Double Hashing
     let dblIdx = h1;
@@ -1206,35 +1276,34 @@ export function generateHashingSteps(keysStr: string, sizeStr: string): TraceSte
       dblProbes++;
       dblIdx = (h1 + dblProbes * h2) % m;
     }
-    doubleTable[dblIdx] = key;
+    doubleTable[dblIdx] = pk.label;
 
     // 4. Separate Chaining
-    chainTable[h1].push(key);
+    chainTable[h1].push(pk.label);
 
-    const nextNum = kIdx + 1 < keys.length ? keys[kIdx + 1] : 'None (Completed)';
+    const nextLabel = kIdx + 1 < parsedKeys.length ? parsedKeys[kIdx + 1].label : 'None (Completed)';
 
     steps.push({
       stepNumber: steps.length + 1,
       codeLine: linProbes > 0 ? 5 : 3,
-      title: `Insert Key #${kIdx + 1}: x = ${key} (H₁(${key}) = ${h1})`,
+      title: `Insert Key #${kIdx + 1}: ${pk.label} (H₁ = ${h1})`,
       explanation:
-        `Inserting key x = ${key} (Primary Slot: H₁(${key}) = ${key} mod ${m} = ${h1}). ${
-          kIdx + 1 < keys.length ? `Next key in queue: x = ${keys[kIdx + 1]}.` : 'This is the final key.'
-        } ` +
+        `Inserting key ${pk.label} (Primary Slot: H₁ = ${h1}). ${
+          pk.foldingDetail ? `Folding: ${pk.foldingDetail}. ` : ''
+        }` +
         (linProbes === 0
           ? `Cell ${h1} is empty! Placed directly at index ${h1} in all schemes.`
-          : `Collision at H₁(${key}) = ${h1}! Linear Probing places at (${h1} + ${linProbes}) mod ${m} = ${linIdx}. Quadratic Probing places at (${h1} + ${quadProbes}²) mod ${m} = ${quadIdx}. Double Hashing uses H₂(${key}) = ${h2} to place at (${h1} + ${dblProbes}×${h2}) mod ${m} = ${dblIdx}. Separate Chaining links ${key} into bucket ${h1}.`),
-      formula: `Entering: x = ${key} ⇒ H₁(${key}) = ${h1}${kIdx + 1 < keys.length ? ` | Next: x = ${keys[kIdx + 1]}` : ''}${linProbes > 0 ? ` | Probed to ${linIdx}` : ' | Placed directly'}`,
+          : `Collision at H₁ = ${h1}! Linear Probing places at (${h1} + ${linProbes}) mod ${m} = ${linIdx}. Quadratic Probing places at (${h1} + ${quadProbes}²) mod ${m} = ${quadIdx}. Double Hashing uses H₂ = ${h2} to place at (${h1} + ${dblProbes}×${h2}) mod ${m} = ${dblIdx}. Separate Chaining links ${pk.label} into bucket ${h1}.`),
+      formula: `Entering: ${pk.label} ⇒ H₁ = ${h1}${linProbes > 0 ? ` | Quad Probe → ${quadIdx} | Lin Probe → ${linIdx}` : ' | Placed directly'}`,
       variables: {
-        'Entering Key (x)': key,
-        'Primary Slot H₁(x)': `${key} mod ${m} = ${h1}`,
-        'Next Key': nextNum,
-        'Remaining Keys': keys.slice(kIdx + 1).join(', ') || 'None (Completed)',
+        'Entering Key': pk.label,
+        'Primary Slot H₁(x)': h1,
+        'Next Key': nextLabel,
         'Linear Probing': `Index ${linIdx} (${linProbes} probe${linProbes === 1 ? '' : 's'})`,
         'Quadratic Probing': `Index ${quadIdx} (${quadProbes} probe${quadProbes === 1 ? '' : 's'})`,
         'Double Hashing': `Index ${dblIdx} (${dblProbes} probe${dblProbes === 1 ? '' : 's'})`,
       },
-      tables: buildHashTables(key, kIdx, linIdx, quadIdx, dblIdx, h1),
+      tables: buildHashTables(pk, kIdx, linIdx, quadIdx, dblIdx, h1),
     });
   });
 

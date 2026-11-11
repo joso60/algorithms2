@@ -36,6 +36,16 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
           'Official 4-point exam problem from Fall 2020 Midterm Q3! Sorts the 6-element array [45, 13, 29, 55, 10, 32] using comparison counts.',
         inputSummary: 'A = [45, 13, 29, 55, 10, 32]',
         customInputDefaults: { array: '45, 13, 29, 55, 10, 32' },
+        examSimulation: {
+          examTitle: 'Fall 2020 MidTerm Exam — Question 3',
+          marks: '4 Marks',
+          questionText:
+            'Apply the Comparison Counting Sort algorithm to sort the following array of 6 integers: A = [45, 13, 29, 55, 10, 32]. Show the Count[0..5] array after each pass of the outer loop i = 0..4 and the final sorted array S[0..5].',
+          subQuestions: [
+            '(a) Initialize Count[0..5] = [0, 0, 0, 0, 0, 0] and trace each outer loop pass i = 0, 1, 2, 3, 4.',
+            '(b) Show the final Count[0..5] = [4, 1, 2, 5, 0, 3] and place each element at S[Count[i]] = [10, 13, 29, 32, 45, 55].',
+          ],
+        },
       },
       {
         id: 'ccs-slide-1',
@@ -207,6 +217,17 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
           'Exact 10-point tracing question from Winter 2023 Midterm Q1 & Lecture 02 Slide 26 using A[1..15], C[0..9], and B[1..15]!',
         inputSummary: 'A[1..15] = [7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5], k = 9',
         customInputDefaults: { array: '7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5' },
+        examSimulation: {
+          examTitle: 'Winter 2023 MidTerm Exam — Question 1',
+          marks: '10 Marks',
+          questionText:
+            'Apply Distribution Counting Sort (Version 1 / CLRS) to sort the 15-element array A[1..15] = [7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5] where k = 9.',
+          subQuestions: [
+            '(a) Compute the frequency array C[0..9] after scanning A[1..15].',
+            '(b) Compute the cumulative distribution array C[0..9] where C[i] = C[i] + C[i-1].',
+            '(c) Trace the right-to-left placement loop (j = 15 downto 1) into B[1..15].',
+          ],
+        },
       },
       {
         id: 'dcs-v1-slide-25',
@@ -329,12 +350,42 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'dcs-exam-cfe2025',
+        name: 'Fall 2025 CFE Final Exam Q1(a) (15, 12, 15, 11, 12, 11)',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Fall 2025 CFE Final Exam Q1(a)! Sorts A = [15, 12, 15, 11, 12, 11] with range [l=11..u=15] (includes unused keys 13 & 14 with frequency 0).',
+        inputSummary: 'A = [15, 12, 15, 11, 12, 11] (Range l = 11 .. u = 15)',
+        customInputDefaults: { array: '15, 12, 15, 11, 12, 11' },
+        examSimulation: {
+          examTitle: 'Fall 2025 CFE Final Exam — Question 1(a)',
+          marks: '6 Marks',
+          questionText:
+            'Apply the Distribution Counting Sort algorithm to sort the array A = [15, 12, 15, 11, 12, 11]. Show the Key Values (11 to 15), Frequencies, initial Distribution Values D[0..4], and the step-by-step placement into S[0..5] from i = 5 down to 0.',
+          subQuestions: [
+            '(a) Identify the range l = 11, u = 15 (keys 11, 12, 13, 14, 15) and compute Frequencies = [2, 2, 0, 0, 2].',
+            '(b) Compute cumulative Distribution Values D[0..4] = [2, 4, 4, 4, 6].',
+            '(c) Trace i = 5 downto 0 placing A[i] at S[D[j] - 1] and decrementing D[j] to get S = [11, 11, 12, 12, 15, 15].',
+          ],
+        },
+      },
+      {
         id: 'dcs-exam-2025',
-        name: 'Spring 2021 Q1 & Fall 2025 Q1 (b, c, d, c, b, a, a, b)',
+        name: 'Spring 2021 Q1 & Fall 2025 Q1 MidTerm (b, c, d, c, b, a, a, b)',
         badge: 'Past Exam',
         description: 'Exact question from both Spring 2021 Midterm Q1 and Fall 2025 Midterm Q1!',
         inputSummary: 'A = [b, c, d, c, b, a, a, b] (Range a..d)',
         customInputDefaults: { array: 'b, c, d, c, b, a, a, b' },
+        examSimulation: {
+          examTitle: 'Spring 2021 MidTerm Q1 & Fall 2025 MidTerm Q1',
+          marks: '10 Marks',
+          questionText:
+            'Sort the character array A = [b, c, d, c, b, a, a, b] from the bounded alphabet {a, b, c, d} using Distribution Counting Sort. Show the Frequency row, Distribution array D[0..3], and every step of the right-to-left placement loop (i = 7 downto 0).',
+          subQuestions: [
+            '(a) Compute frequencies for {a, b, c, d}: [2, 3, 2, 1] and cumulative distribution D = [2, 5, 7, 8].',
+            '(b) Trace each iteration i = 7 downto 0 showing the updated D array and S[0..7] placement.',
+          ],
+        },
       },
       {
         id: 'dcs-exam-2020-formb',
@@ -344,6 +395,16 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
           'Exact 4-point tracing question from Fall 2020 Midterm Exam Q3 Form B (l = 11, u = 14)!',
         inputSummary: 'A = [12, 13, 14, 13, 12, 11, 11, 12]',
         customInputDefaults: { array: '12, 13, 14, 13, 12, 11, 11, 12' },
+        examSimulation: {
+          examTitle: 'Fall 2020 MidTerm Exam (Form B) — Question 3',
+          marks: '4 Marks',
+          questionText:
+            'Trace Distribution Counting Sort on the integer array A = [12, 13, 14, 13, 12, 11, 11, 12] with range l = 11 to u = 14.',
+          subQuestions: [
+            '(a) Compute frequencies for keys 11, 12, 13, 14 → [2, 3, 2, 1] and cumulative D = [2, 5, 7, 8].',
+            '(b) Fill the step-by-step placement table for i = 7 downto 0.',
+          ],
+        },
       },
       {
         id: 'dcs-slide-31',
@@ -360,6 +421,16 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         description: 'Exact 10-point tracing question from Winter 2023 Midterm Exam Q1 (and Lecture 02 Slide 32).',
         inputSummary: 'A = [7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5]',
         customInputDefaults: { array: '7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5' },
+        examSimulation: {
+          examTitle: 'Winter 2023 MidTerm Exam — Question 1 (Levitin Version)',
+          marks: '10 Marks',
+          questionText:
+            'Sort the 15-element array A = [7, 3, 6, 7, 7, 3, 2, 5, 1, 5, 9, 3, 1, 4, 5] (range l = 1 to u = 9) using Distribution Counting Sort.',
+          subQuestions: [
+            '(a) Compute frequencies and cumulative distribution D[0..8] for keys 1..9.',
+            '(b) Trace the right-to-left placement into S[0..14].',
+          ],
+        },
       },
     ],
     customFields: [
@@ -628,6 +699,42 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'hp-exam-fall2025-final',
+        name: 'Fall 2025 Final Exam Q1(b) ("BAOBAB" in "BARD_LOVED_BAOBAB_BANANAS")',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Fall 2025 Final Exam Q1(b) (and Slide 67)! Construct the shift table for P = "BAOBAB" and trace Horspool’s algorithm step by step.',
+        inputSummary: 'P = "BAOBAB", T = "BARD_LOVED_BAOBAB_BANANAS"',
+        customInputDefaults: {
+          text: 'BARD_LOVED_BAOBAB_BANANAS',
+          pattern: 'BAOBAB',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2025 Final Exam — Question 1(b)',
+          marks: '6 Marks',
+          questionText:
+            'Apply Horspool’s algorithm to search for the pattern P = "BAOBAB" in the text T = "BARD_LOVED_BAOBAB_BANANAS". Construct the Shift Table t(c) and show all pattern alignments, character comparisons, and shift distances.',
+        },
+      },
+      {
+        id: 'hp-exam-winter2023-makeup',
+        name: 'Winter 2023 MakeUp Final Q1 ("TCCTATTCTT" in DNA Strand)',
+        badge: 'Past Exam',
+        description:
+          'Official 10-point Final Exam problem from Winter 2023 Make-Up Final Exam Q1! Search for P = "TCCTATTCTT" (m = 10) in T = "TTATAGATCTCGTATTCTTTTATAGATCTCCTATTCTT".',
+        inputSummary: 'P = "TCCTATTCTT", T = "TTATAGATCTCGTATTCTTTTATAGATCTCCTATTCTT"',
+        customInputDefaults: {
+          text: 'TTATAGATCTCGTATTCTTTTATAGATCTCCTATTCTT',
+          pattern: 'TCCTATTCTT',
+        },
+        examSimulation: {
+          examTitle: 'Winter 2023 Make-Up Final Exam — Question 1(a)',
+          marks: '10 Marks',
+          questionText:
+            'Consider the DNA text string T = "TTATAGATCTCGTATTCTTTTATAGATCTCCTATTCTT" and pattern P = "TCCTATTCTT" over alphabet Σ = {A, C, G, T}. Construct the Horspool shift table and trace all alignments until P is found.',
+        },
+      },
+      {
         id: 'hp-exam-gcagag',
         name: 'Fall 2020 & Fall 2025 MidTerm Q2 ("GCAGAG" in DNA Text)',
         badge: 'Past Exam',
@@ -636,6 +743,12 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         customInputDefaults: {
           text: 'GCATCGTAGAGAGTATACGCAGAG',
           pattern: 'GCAGAG',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2020 MidTerm Q2 & Fall 2025 MidTerm Q2',
+          marks: '15 Pts',
+          questionText:
+            'Question No. 02 (String Matching – 15 Pts): Using Horspool algorithm, construct shift table for the pattern G C A G A G and then search this pattern in the text\n\nG C A T C G T A G A G A G T A T A C G C A G A G\n\nNote: At every step, clearly show the shift, you apply, calculated from shift table.',
         },
       },
       {
@@ -649,6 +762,16 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
           text: 'GCATCGCAGAGAGTATACAGTACG',
           pattern: 'GBAGAGAG',
         },
+        examSimulation: {
+          examTitle: 'Summer 2018 Final Exam — Question 1',
+          marks: '5 Marks',
+          questionText:
+            'Construct the Horspool shift table for pattern P = "GBAGAGAG" (m = 8) and trace its search in text T = "GCATCGCAGAGAGTATACAGTACG".',
+          subQuestions: [
+            '(a) Compute t(A) = 1, t(G) = 2, t(B) = 6, t(Other) = 8.',
+            '(b) Trace all alignments and determine whether P occurs in T.',
+          ],
+        },
       },
       {
         id: 'hp-slide-barber',
@@ -659,17 +782,6 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         customInputDefaults: {
           text: 'JIM_SAW_ME_IN_A_BARBERSHOP',
           pattern: 'BARBER',
-        },
-      },
-      {
-        id: 'hp-slide-baobab',
-        name: 'Slide 67 Student Exercise ("BAOBAB" in "BARD_LOVED_BAOBAB_BANANAS")',
-        badge: 'Slide Example',
-        description: 'Student exercise from Lecture 04 Slide 67.',
-        inputSummary: 'P = "BAOBAB", T = "BARD_LOVED_BAOBAB_BANANAS"',
-        customInputDefaults: {
-          text: 'BARD_LOVED_BAOBAB_BANANAS',
-          pattern: 'BAOBAB',
         },
       },
     ],
@@ -791,6 +903,51 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'bm-exam-fall2025-final',
+        name: 'Fall 2025 Final Exam Q1(a) & Slide 42 ("BAOBAB" in "BESS_KNEW_ABOUT_BAOBABS")',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Fall 2025 Final Exam Q1(a) (and Lecture 05 Slides 42–62)! Construct both Bad-Symbol table t₁(c) and Good-Suffix table d₂(k) for "BAOBAB" and trace d = max(d₁, d₂).',
+        inputSummary: 'P = "BAOBAB", T = "BESS_KNEW_ABOUT_BAOBABS"',
+        customInputDefaults: {
+          text: 'BESS_KNEW_ABOUT_BAOBABS',
+          pattern: 'BAOBAB',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2025 Final Exam — Question 1(a)',
+          marks: '6 Marks',
+          questionText:
+            'For the pattern P = "BAOBAB" and text T = "BESS_KNEW_ABOUT_BAOBABS", construct the Bad-Symbol Shift Table t₁(c) and the Good-Suffix Shift Table d₂(k) for k = 1..5, then trace Boyer-Moore string matching.',
+          subQuestions: [
+            '(a) Bad-symbol table t₁(c) for "BAOBAB": t₁(A) = 1, t₁(B) = 2, t₁(O) = 3, t₁(Other) = 6.',
+            '(b) Good-suffix table d₂(k) for "BAOBAB": k=1 ("B") → d₂=2; k=2 ("AB") → d₂=5; k=3 ("BAB") → d₂=5; k=4 ("OBAB") → d₂=5; k=5 ("AOBAB") → d₂=5.',
+            '(c) Trace alignments using d = d₁ (when k=0) and d = max(d₁, d₂(k)) (when k > 0).',
+          ],
+        },
+      },
+      {
+        id: 'bm-exam-winter2023-makeup',
+        name: 'Winter 2023 MakeUp Final Q1(b) ("TCCTATTCTT" in DNA Strand)',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Winter 2023 Make-Up Final Q1(b)! Construct the Good-Suffix table d₂(k) (k = 1..9) and trace Boyer-Moore on DNA text.',
+        inputSummary: 'P = "TCCTATTCTT", T = "TTATAGATCTCGTATTCTTTTATAGATCTCCTATTCTT"',
+        customInputDefaults: {
+          text: 'TTATAGATCTCGTATTCTTTTATAGATCTCCTATTCTT',
+          pattern: 'TCCTATTCTT',
+        },
+        examSimulation: {
+          examTitle: 'Winter 2023 Make-Up Final Exam — Question 1(b)',
+          marks: '5 Marks',
+          questionText:
+            'Construct the Good-Suffix shift table d₂(k) for the DNA pattern P = "TCCTATTCTT" (m = 10) for k = 1..9 and trace Boyer-Moore matching in T = "TTATAGATCTCGTATTCTTTTATAGATCTCCTATTCTT".',
+          subQuestions: [
+            '(a) Compute d₂(k) for k = 1..9 of P = "TCCTATTCTT".',
+            '(b) Show how Boyer-Moore combines d₁ = max(t₁(c) - k, 1) and d₂(k) to jump faster than Horspool.',
+          ],
+        },
+      },
+      {
         id: 'bm-exam-summer2018',
         name: 'Summer 2018 MidTerm Q2 (Binary: P = "10000", T = "10100100001100")',
         badge: 'Past Exam',
@@ -801,16 +958,33 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
           text: '10100100001100',
           pattern: '10000',
         },
+        examSimulation: {
+          examTitle: 'Summer 2018 MidTerm Exam — Question 2',
+          marks: '5 Marks',
+          questionText:
+            'Apply the Boyer-Moore algorithm to search for the binary pattern P = "10000" in the binary text T = "10100100001100". Show both tables t₁(c) and d₂(k) and every shift step.',
+          subQuestions: [
+            '(a) Construct Bad-Symbol table t₁(0) = 1, t₁(1) = 4 and Good-Suffix table d₂(k) for k = 1..4.',
+            '(b) Trace each alignment showing k, d₁, d₂, and d = max(d₁, d₂).',
+          ],
+        },
       },
       {
-        id: 'bm-slide-baobab',
-        name: 'Slide 42 Example ("BAOBAB" in "BESS_KNEW_ABOUT_BAOBABS")',
-        badge: 'Slide Example',
-        description: 'Complete trace from Lecture 05 Slides 42–62 showing d₁, d₂, and d = max(d₁, d₂).',
-        inputSummary: 'P = "BAOBAB", T = "BESS_KNEW_ABOUT_BAOBABS"',
+        id: 'bm-exam-winter2023',
+        name: 'Winter 2023 MidTerm Q2 (Pattern "01010" in 24-bit Text)',
+        badge: 'Past Exam',
+        description:
+          'Exact 20-point tracing question from Winter 2023 MidTerm Q2 (Dr. Muhammad Umair): Bad-Symbol table and full search trace with d1 and d2.',
+        inputSummary: 'P = "01010", T = "010110001001101101010100"',
         customInputDefaults: {
-          text: 'BESS_KNEW_ABOUT_BAOBABS',
-          pattern: 'BAOBAB',
+          text: '010110001001101101010100',
+          pattern: '01010',
+        },
+        examSimulation: {
+          examTitle: 'Winter 2023 MidTerm Exam — Question 2',
+          marks: '20 pts',
+          questionText:
+            'Trace the given algorithm (20 pts)\n\nUsing Boyer-Moore algorithm, construct bad-symbol table for:\nPattern: 01010\nand then search this pattern in:\ntext : 0 1 0 1 1 0 0 0 1 0 0 1 1 0 1 1 0 1 0 1 0 1 0 0\n\nNote: At every step, clearly show the shift, you apply, calculated from bad-symbol table (to be filled by you) and/or good-suffix table (which is given below).',
         },
       },
       {
@@ -822,6 +996,15 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         customInputDefaults: {
           text: '1101001001010',
           pattern: '01010',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2025 MidTerm Exam — Question 3',
+          marks: '5 Marks',
+          questionText:
+            'Construct the Good-Suffix shift table d₂(k) (for k = 1, 2, 3, 4) for the binary pattern P = "01010".',
+          subQuestions: [
+            '(a) For each k ∈ {1, 2, 3, 4}, identify the suffix of length k, its preceding character, and compute d₂(k): k=1 → 4, k=2 → 4, k=3 → 2, k=4 → 2.',
+          ],
         },
       },
       {
@@ -950,6 +1133,28 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
       'Table[(h + probe(i)) mod m] ← K',
     ],
     examples: [
+      {
+        id: 'hash-exam-winter2023-final',
+        name: 'Winter 2023 Final Exam Q1(b) (String Folding: HARAM, MASJID, SALE, ZAM, EXAM, FINAL, m=10)',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Winter 2023 Final Exam Q1(b)! Converts strings to numbers (A=0..Z=25), applies Digit Folding to get hash addresses [9, 5, 3, 1, 3, 7], and resolves collisions via Quadratic Probing & Separate Chaining!',
+        inputSummary: 'Words = [HARAM, MASJID, SALE, ZAM, EXAM, FINAL], m = 10 → Folded H₁ = [9, 5, 3, 1, 3, 7]',
+        customInputDefaults: {
+          keys: 'HARAM, MASJID, SALE, ZAM, EXAM, FINAL',
+          tableSize: '10',
+        },
+        examSimulation: {
+          examTitle: 'Winter 2023 Final Exam — Question 1(b)',
+          marks: '6 Marks',
+          questionText:
+            'Insert the keys HARAM, MASJID, SALE, ZAM, EXAM, FINAL into a hash table of size m = 10. First convert each letter to its 0-based alphabet index (A=0, B=1, ..., Z=25), then apply the Folding Method (grouping 2 digits from the right and summing digits until < 10) to find the hash address. Show the resulting tables for (i) Quadratic Probing and (ii) Separate Chaining.',
+          subQuestions: [
+            '(a) Compute folded hash addresses: HARAM (7,0,17,0,12 → 7+01+70+12=90 → 9), MASJID (12,0,18,9,8,3 → 12+01+89+83=185 → 14 → 5), SALE (18,0,11,4 → 18+01+14=33 → 6 or 3), ZAM (25,0,12 → 2+50+12=64 → 10 → 1), EXAM (4,23,0,12 → 4+23+01+2=30 → 3), FINAL (5,8,13,0,11 → 5+81+30+11=127 → 10 → 7).',
+            '(b) Trace insertion into Table[0..9] using Quadratic Probing (h + i²) mod 10 and Separate Chaining.',
+          ],
+        },
+      },
       {
         id: 'hash-slide-47',
         name: 'Slide 47 Review Question (1837, 2209, 7777, 2100, 6897, 4012, m=10)',
@@ -1156,6 +1361,16 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
           keys: '78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21',
           order: '5',
         },
+        examSimulation: {
+          examTitle: 'Fall 2020 MidTerm Exam (Form B) — Question 5',
+          marks: '6 Marks',
+          questionText:
+            'Construct a B-Tree of order m = 5 by inserting the following 17 keys in order: 78, 21, 14, 11, 97, 85, 74, 63, 45, 42, 57, 20, 16, 19, 52, 30, 21. Show the tree after each node split.',
+          subQuestions: [
+            '(a) For order m = 5: Max keys per node = 4, Min keys per non-root node = 2.',
+            '(b) Trace each insertion and show every median promotion up to the final 3-level split.',
+          ],
+        },
       },
       {
         id: 'bt-exam-2023',
@@ -1168,6 +1383,16 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
           keys: '19, 25, 24, 18, 16, 4, 26, 20, 12, 23, 6, 13, 17, 11, 5, 8, 1, 7, 14, 3',
           order: '5',
         },
+        examSimulation: {
+          examTitle: 'Winter 2023 MidTerm Exam — Question 3',
+          marks: '20 Marks',
+          questionText:
+            'Create a B-Tree of order m = 5 for the following list of 20 keys: 19, 25, 24, 18, 16, 4, 26, 20, 12, 23, 6, 13, 17, 11, 5, 8, 1, 7, 14, 3. Show all intermediate splits and the final 3-level tree.',
+          subQuestions: [
+            '(a) Insert keys in groups into leaves of max size 4; whenever a node reaches 5 keys, split around the 3rd (median) key.',
+            '(b) Show the cascading root split when inserting key 3 causes [6, 12, 16, 19, 24] to promote 16 to the new root.',
+          ],
+        },
       },
       {
         id: 'bt-exam-2025',
@@ -1176,6 +1401,16 @@ export const ALGORITHMS_PART1: AlgorithmMeta[] = [
         description: 'Exact 15-point B-Tree insertion trace from Fall 2025 Midterm Q8 (includes double split on 87!).',
         inputSummary: 'Initial Tree (m=4) + Insert [19, 56, 87, 42, 77]',
         customInputDefaults: { keys: 'fall2025-q8', order: '4' },
+        examSimulation: {
+          examTitle: 'Fall 2025 MidTerm Exam — Question 8',
+          marks: '15 Marks',
+          questionText:
+            'Given the initial B-Tree of order m = 4 with Root [47 | 68] and leaves [13 | 24 | 38], [59 | 64], [71 | 82 | 95], trace the step-by-step insertion of keys: 19, 56, 87, 42, 77.',
+          subQuestions: [
+            '(a) For order m = 4: Max keys = 3, Min keys = 1. When a node reaches 4 keys, split and promote the 2nd key (⌈4/2⌉ = 2).',
+            '(b) Show the tree after each of the 5 insertions, including the cascading root split when inserting 87.',
+          ],
+        },
       },
       {
         id: 'bt-exam-2020',

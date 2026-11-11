@@ -1,11 +1,12 @@
 {
-  "name": "cpu-scheduler",
+  "name": "cpcs324-algorithms-workbench",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "build:check": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },

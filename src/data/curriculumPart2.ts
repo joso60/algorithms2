@@ -570,6 +570,44 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'cr-exam-fall2025-final',
+        name: 'Fall 2025 Final Exam Q2(a) (Coins: 4, 9, 3, 8, 5, 7 ➔ Max = 24)',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Fall 2025 Final Exam Q2(a)! Solve the Coin-Row instance C = [4, 9, 3, 8, 5, 7] using F[i] = max(cᵢ + F[i-2], F[i-1]) to reach F[6] = 24 (picks c₂=9, c₄=8, c₆=7).',
+        inputSummary: 'C = [4, 9, 3, 8, 5, 7] → F[0..6] = [0, 4, 9, 9, 17, 17, 24]',
+        customInputDefaults: { coins: '4, 9, 3, 8, 5, 7' },
+        examSimulation: {
+          examTitle: 'Fall 2025 Final Exam — Question 2(a)',
+          marks: '5 Marks',
+          questionText:
+            'Apply the Dynamic Programming Coin-Row algorithm to find the maximum amount of money that can be picked up from the coin row C = [4, 9, 3, 8, 5, 7] subject to the constraint that no two adjacent coins can be picked. Show the complete DP table F[0..6] and identify the selected coins.',
+          subQuestions: [
+            '(a) Initialize F[0] = 0, F[1] = c₁ = 4, and evaluate F[i] = max(cᵢ + F[i-2], F[i-1]) for i = 2..6.',
+            '(b) Show F[0..6] = [0, 4, 9, 9, 17, 17, 24] and backtrack to identify the optimal coins: c₂=9, c₄=8, c₆=7 (Total = 24).',
+          ],
+        },
+      },
+      {
+        id: 'cr-exam-cfe2025-final',
+        name: 'Fall 2025 CFE Final Exam Q2(a) (Coins: 5, 1, 9, 10, 9, 2 ➔ Max = 23)',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Fall 2025 CFE Final Exam Q2(a)! Solve C = [5, 1, 9, 10, 9, 2] to get F[0..6] = [0, 5, 5, 14, 15, 23, 23] (picks c₁=5, c₃=9, c₅=9 → 23).',
+        inputSummary: 'C = [5, 1, 9, 10, 9, 2] → F[0..6] = [0, 5, 5, 14, 15, 23, 23]',
+        customInputDefaults: { coins: '5, 1, 9, 10, 9, 2' },
+        examSimulation: {
+          examTitle: 'Fall 2025 CFE Final Exam — Question 2(a)',
+          marks: '5 Marks',
+          questionText:
+            'Apply the Dynamic Programming Coin-Row algorithm to the coin row C = [5, 1, 9, 10, 9, 2]. Compute every entry of F[0..6] and state which coins produce the maximum value.',
+          subQuestions: [
+            '(a) Compute F[0..6] = [0, 5, 5, 14, 15, 23, 23] step-by-step.',
+            '(b) Backtrack from F[6] = 23 to find the selected coins: c₁ = 5, c₃ = 9, c₅ = 9 (5 + 9 + 9 = 23).',
+          ],
+        },
+      },
+      {
         id: 'cr-slide-30',
         name: 'Slide 30 Example (Coins: 5, 1, 2, 10, 6, 2 ➔ Max = 17)',
         badge: 'Slide Example',
@@ -679,6 +717,25 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
       'return F[n]',
     ],
     examples: [
+      {
+        id: 'cm-exam-fall2025-final',
+        name: 'Fall 2025 Final Exam Q2(b) (Amount n = 9, D = [1, 4, 5, 7] ➔ Min = 2 Coins)',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Fall 2025 Final Exam Q2(b)! Compute F[0..9] for target amount n = 9 with denominations D = {1, 4, 5, 7}. DP finds {4, 5} (2 coins), whereas Greedy would pick {7, 1, 1} (3 coins)!',
+        inputSummary: 'n = 9, D = [1, 4, 5, 7] → F[9] = 2 coins (4 + 5)',
+        customInputDefaults: { amount: '9', denoms: '1, 4, 5, 7' },
+        examSimulation: {
+          examTitle: 'Fall 2025 Final Exam — Question 2(b)',
+          marks: '5 Marks',
+          questionText:
+            'Apply the Dynamic Programming Change-Making algorithm to find the minimum number of coins required to make change for amount n = 9 using coin denominations D = {1, 4, 5, 7}. Show the complete table F[0..9] and the coins chosen.',
+          subQuestions: [
+            '(a) Initialize F[0] = 0 and compute F[i] = min_{j: i ≥ d_j} { F[i - d_j] } + 1 for i = 1..9.',
+            '(b) Show F[0..9] = [0, 1, 2, 3, 1, 1, 2, 1, 2, 2] and explain why F[9] = 2 (using coins 4 + 5) beats the greedy choice (7 + 1 + 1 = 3 coins).',
+          ],
+        },
+      },
       {
         id: 'cm-slide-73',
         name: 'Slide 73 Example (Amount n = 6, Denominations D = [1, 3, 4])',
@@ -811,6 +868,27 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'cc-exam-fall2020-spring2021',
+        name: '🚫 [EXCLUDED] Fall 2020 Final Q1 & Spring 2021 Final Q1 (5×6 Grid)',
+        badge: 'Past Exam',
+        description:
+          '⚠️ EXCLUDED FROM SYLLABUS: Official Final Exam question from BOTH Fall 2020 Final Exam Q1 and Spring 2021 Final Exam Q1 (5×6 board).',
+        inputSummary: '5×6 Board from Fall 2020 & Spring 2021 Final Exam Q1 (Max Coins = 5)',
+        customInputDefaults: {
+          grid: '0 0 0 0 1 0; 0 1 0 1 0 0; 0 0 0 1 0 1; 0 0 1 0 0 1; 1 0 0 0 1 0',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2020 Final Exam Q1 & Spring 2021 Final Exam Q1',
+          marks: '6 Marks',
+          questionText:
+            'Several coins are placed in cells of a 5×6 board. A robot located at the upper-left cell (1,1) needs to collect as many coins as possible and bring them to the bottom-right cell (5,6), moving only one cell right or one cell down at each step. Apply the Dynamic Programming algorithm to fill the table F[1..5, 1..6] and trace the optimal path.',
+          subQuestions: [
+            '(a) Fill row 1 and column 1, then apply F[i, j] = max(F[i-1, j], F[i, j-1]) + C[i, j] for all remaining cells.',
+            '(b) State the maximum number of coins collected (5 coins) and trace the optimal path from (1,1) to (5,6).',
+          ],
+        },
+      },
+      {
         id: 'cc-exam-summer2018',
         name: '🚫 [EXCLUDED] Summer 2018 Final Exam Q4 (6×6 Grid)',
         badge: 'Past Exam',
@@ -819,6 +897,16 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
         inputSummary: '6×6 Grid with coins at (1,3), (1,6), (2,4), (3,2), (3,5), (4,4), (5,1), (5,5), (6,3), (6,5)',
         customInputDefaults: {
           grid: '0 0 1 0 0 1; 0 0 0 1 0 0; 0 1 0 0 1 0; 0 0 0 1 0 0; 1 0 0 0 1 0; 0 0 1 0 1 0',
+        },
+        examSimulation: {
+          examTitle: 'Summer 2018 Final Exam — Question 4',
+          marks: '5 Marks',
+          questionText:
+            'Apply the Robot Coin Collection Dynamic Programming algorithm to the given 6×6 grid to find the maximum number of coins the robot can collect from (1,1) to (6,6).',
+          subQuestions: [
+            '(a) Fill the 6×6 DP table F[1..6, 1..6].',
+            '(b) Backtrack from F[6,6] to (1,1) to highlight the optimal robot path.',
+          ],
         },
       },
       {
@@ -960,6 +1048,52 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'ks-exam-winter2023-final',
+        name: 'Winter 2023 Final Exam Q2 (4 Items: w=[3,2,1,4], v=[25,20,15,40], W=5 ➔ $55)',
+        badge: 'Past Exam',
+        description:
+          'Official 10-point Final Exam problem from Winter 2023 Final Exam Q2! Solve 0-1 Knapsack for 4 items with weights [3, 2, 1, 4], values [25, 20, 15, 40], and capacity W = 5 (Optimal Value = $55 using items {3, 4}).',
+        inputSummary: 'w = [3, 2, 1, 4], v = [25, 20, 15, 40], W = 5 → F[4, 5] = $55',
+        customInputDefaults: {
+          weights: '3, 2, 1, 4',
+          values: '25, 20, 15, 40',
+          capacity: '5',
+        },
+        examSimulation: {
+          examTitle: 'Winter 2023 Final Exam — Question 2',
+          marks: '10 Marks',
+          questionText:
+            'Apply the Dynamic Programming 0-1 Knapsack algorithm to the following 4 items with knapsack capacity W = 5: Item 1 (w=3, v=$25), Item 2 (w=2, v=$20), Item 3 (w=1, v=$15), Item 4 (w=4, v=$40). Fill the DP table F[0..4, 0..5] and find the optimal subset of items.',
+          subQuestions: [
+            '(a) Fill table F[0..4, 0..5] using F[i, j] = max(F[i-1, j], vᵢ + F[i-1, j - wᵢ]) when j ≥ wᵢ.',
+            '(b) State the maximum value F[4, 5] = $55 and backtrack to identify the optimal subset: Item 3 (w=1, v=$15) and Item 4 (w=4, v=$40).',
+          ],
+        },
+      },
+      {
+        id: 'ks-exam-winter2023-makeup',
+        name: 'Winter 2023 MakeUp Final Q2 (4 Items: w=[4,1,2,3], v=[25,20,15,40], W=5 ➔ $60)',
+        badge: 'Past Exam',
+        description:
+          'Official 10-point Final Exam problem from Winter 2023 Make-Up Final Exam Q2! Weights [4, 1, 2, 3], values [25, 20, 15, 40], capacity W = 5 (Optimal Value = $60 using items {2, 4}).',
+        inputSummary: 'w = [4, 1, 2, 3], v = [25, 20, 15, 40], W = 5 → F[4, 5] = $60',
+        customInputDefaults: {
+          weights: '4, 1, 2, 3',
+          values: '25, 20, 15, 40',
+          capacity: '5',
+        },
+        examSimulation: {
+          examTitle: 'Winter 2023 Make-Up Final Exam — Question 2',
+          marks: '10 Marks',
+          questionText:
+            'Solve the 0-1 Knapsack problem for 4 items with weights w = [4, 1, 2, 3], values v = [$25, $20, $15, $40], and knapsack capacity W = 5 using Bottom-Up Dynamic Programming.',
+          subQuestions: [
+            '(a) Construct the complete DP table F[0..4, 0..5].',
+            '(b) Backtrack from F[4, 5] = $60 to find the optimal items: Item 2 (w=1, v=$20) + Item 4 (w=3, v=$40) = $60 (total weight 4 ≤ 5).',
+          ],
+        },
+      },
+      {
         id: 'ks-exam-2025',
         name: 'Summer 2018 Final Q2 & Fall 2025 MidTerm Q4 (5 Items, W = 6, Max Value = $65)',
         badge: 'Past Exam',
@@ -969,6 +1103,16 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
           weights: '3, 2, 1, 4, 5',
           values: '25, 20, 15, 40, 50',
           capacity: '6',
+        },
+        examSimulation: {
+          examTitle: 'Summer 2018 Final Exam Q2 & Fall 2025 MidTerm Exam Q4',
+          marks: '10 Marks',
+          questionText:
+            'Apply the Bottom-Up Dynamic Programming algorithm to the 0-1 Knapsack problem with 5 items: w = [3, 2, 1, 4, 5], v = [$25, $20, $15, $40, $50], and capacity W = 6.',
+          subQuestions: [
+            '(a) Fill the table F[0..5, 0..6] row-by-row.',
+            '(b) Identify the optimal value F[5, 6] = $65 and trace the chosen items: Item 3 (w=1, v=$15) and Item 5 (w=5, v=$50).',
+          ],
         },
       },
       {
@@ -1146,6 +1290,17 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
           keys: 'A, B, C, D',
           probs: '0.2, 0.1, 0.4, 0.3',
         },
+        examSimulation: {
+          examTitle: 'Summer 2018 Q5, Fall 2020 Q3 & Fall 2025 Q6 MidTerm Exams',
+          marks: '12 Marks',
+          questionText:
+            'Apply the Dynamic Programming Optimal Binary Search Tree (OBST) algorithm to keys A, B, C, D with search probabilities p₁ = 0.2, p₂ = 0.1, p₃ = 0.4, p₄ = 0.3. Show the Cost Table C[1..5, 0..4], Root Table R[1..5, 0..4], and draw the final Optimal BST.',
+          subQuestions: [
+            '(a) Initialize main diagonal C[i, i-1] = 0 and first diagonal C[i, i] = pᵢ, R[i, i] = i.',
+            '(b) Show detailed calculations for C[1,2], C[2,3], C[3,4], C[1,3], C[2,4], and C[1,4] = 1.7.',
+            '(c) Construct the Optimal BST from Root Table R (Root = C, Left = A with right child B, Right = D).',
+          ],
+        },
       },
       {
         id: 'obst-exam-2020-formb',
@@ -1157,6 +1312,16 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
         customInputDefaults: {
           keys: 'A, B, C',
           probs: '0.1, 0.3, 0.2',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2020 MidTerm Exam (Form B) — Question 4',
+          marks: '8 Marks',
+          questionText:
+            'Find the Optimal Binary Search Tree for the 3 keys A, B, C with probabilities p = [0.1, 0.3, 0.2]. Show both tables C[1..4, 0..3] and R[1..4, 0..3] and draw the resulting tree.',
+          subQuestions: [
+            '(a) Compute C[1,2] = 0.5 (k=2), C[2,3] = 0.7 (k=2), and C[1,3] = 0.9 (k=2).',
+            '(b) Draw the Optimal BST rooted at B (k=2) with left child A and right child C.',
+          ],
         },
       },
       {
@@ -1431,6 +1596,27 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
     ],
     examples: [
       {
+        id: 'floyd-exam-cfe2025-final',
+        name: 'Fall 2025 CFE Final Exam Q2(b) (4 Vertices: a→b:4, a→c:7, b→c:1, b→d:5, c→d:2, d→a:6)',
+        badge: 'Past Exam',
+        description:
+          'Official Final Exam problem from Fall 2025 CFE Final Exam Q2(b)! Apply Floyd’s algorithm to the 4-vertex directed graph to compute D^(0), D^(1), D^(2), D^(3), and D^(4).',
+        inputSummary: 'a→b(4), a→c(7), b→c(1), b→d(5), c→d(2), d→a(6)',
+        customInputDefaults: {
+          matrix: '0 4 7 inf; inf 0 1 5; inf inf 0 2; 6 inf inf 0',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2025 CFE Final Exam — Question 2(b)',
+          marks: '6 Marks',
+          questionText:
+            'Apply Floyd’s algorithm to find the length of the shortest paths between all pairs of vertices in the weighted directed graph with edges: (a,b)=4, (a,c)=7, (b,c)=1, (b,d)=5, (c,d)=2, (d,a)=6. Show the initial weight matrix D^(0) and all intermediate distance matrices D^(1), D^(2), D^(3), D^(4).',
+          subQuestions: [
+            '(a) Write the initial weight matrix D^(0) = [0 4 7 ∞; ∞ 0 1 5; ∞ ∞ 0 2; 6 ∞ ∞ 0].',
+            '(b) Compute D^(1) (via a: d→b=10, d→c=13), D^(2) (via b: a→c=5, a→d=9, d→c=11, d→d=15), D^(3) (via c: a→d=7, b→d=3, d→d=13), and D^(4) (via d: b→a=9, c→a=8, c→b=12).',
+          ],
+        },
+      },
+      {
         id: 'floyd-exam-2020-2025',
         name: 'Fall 2020 Q1 & Fall 2025 Q7 MidTerm Exam Graph (a, b, c, d)',
         badge: 'Past Exam',
@@ -1438,6 +1624,16 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
         inputSummary: 'a→b(8), a→d(1), b→c(1), c→a(4), d→b(2), d→c(9)',
         customInputDefaults: {
           matrix: '0 8 inf 1; inf 0 1 inf; 4 inf 0 inf; inf 2 9 0',
+        },
+        examSimulation: {
+          examTitle: 'Fall 2020 MidTerm Q1 & Fall 2025 MidTerm Q7',
+          marks: '12 Marks',
+          questionText:
+            'Apply Floyd’s algorithm for All-Pairs Shortest Paths to the 4-vertex directed graph with edges: a→b(8), a→d(1), b→c(1), c→a(4), d→b(2), d→c(9). Show D^(0), D^(1), D^(2), D^(3), and D^(4).',
+          subQuestions: [
+            '(a) Construct D^(0) from the given graph.',
+            '(b) Trace pivots k = 1 (a), k = 2 (b), k = 3 (c), and k = 4 (d) using D^(k)[i,j] = min(D^(k-1)[i,j], D^(k-1)[i,k] + D^(k-1)[k,j]).',
+          ],
         },
       },
       {
@@ -1450,6 +1646,15 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
         customInputDefaults: {
           matrix: '0 4 1; 2 0 inf; inf 2 0',
         },
+        examSimulation: {
+          examTitle: 'Fall 2020 MidTerm Exam (Form B) — Question 1',
+          marks: '4 Marks',
+          questionText:
+            'Apply Floyd’s algorithm to the 3-vertex directed graph with edges a→b(4), a→c(1), b→a(2), c→b(2). Show D^(0), D^(1), D^(2), and D^(3).',
+          subQuestions: [
+            '(a) Compute D^(1) via pivot a, D^(2) via pivot b, and D^(3) via pivot c.',
+          ],
+        },
       },
       {
         id: 'floyd-exam-summer2018',
@@ -1460,6 +1665,15 @@ export const ALGORITHMS_PART2: AlgorithmMeta[] = [
         inputSummary: '1→2(4), 1→3(5), 2→1(2), 3→2(-3)',
         customInputDefaults: {
           matrix: '0 4 5; 2 0 inf; inf -3 0',
+        },
+        examSimulation: {
+          examTitle: 'Summer 2018 MidTerm Exam — Question 4',
+          marks: '5 Marks',
+          questionText:
+            'Apply Floyd’s algorithm to the 3-vertex graph with weight matrix D^(0) = [0 4 5; 2 0 ∞; ∞ -3 0]. Show D^(1), D^(2), and D^(3).',
+          subQuestions: [
+            '(a) Trace k = 1, 2, 3 and show how the negative edge 3→2 (-3) reduces D[1,2] from 4 to 5 + (-3) = 2 at k = 3.',
+          ],
         },
       },
       {

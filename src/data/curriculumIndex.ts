@@ -1,6 +1,8 @@
 import type { AlgorithmId, AlgorithmMeta, TraceStep } from '../types/algorithm';
 import { ALGORITHMS_PART1 } from './curriculumPart1';
 import { ALGORITHMS_PART2 } from './curriculumPart2';
+import { ALGORITHMS_PART3 } from './curriculumPart3';
+import { ALGORITHMS_PART4 } from './curriculumPart4';
 import {
   generateComparisonCountingSteps,
   generateDistributionCountingV1Steps,
@@ -23,6 +25,21 @@ import {
   generateWarshallSteps,
   generateFloydSteps,
 } from './traceGeneratorsPart2';
+import {
+  generateGreedyChangeMakingSteps,
+  generatePrimSteps,
+  generateKruskalSteps,
+  generateDijkstraSteps,
+  generateHuffmanSteps,
+} from './traceGeneratorsPart3';
+import {
+  generateSimplexSteps,
+  generateMaxFlowSteps,
+  generateBipartiteMatchingSteps,
+  generateStableMarriageSteps,
+  generateBacktrackingSteps,
+  generateBranchAndBoundSteps,
+} from './traceGeneratorsPart4';
 
 export const MIDTERM_EXAM_FREQUENCY: Record<
   AlgorithmId,
@@ -45,9 +62,8 @@ export const MIDTERM_EXAM_FREQUENCY: Record<
     papers: ['Winter 2023 MidTerm Q2'],
   },
   horspool: {
-    count: 4,
+    count: 3,
     papers: [
-      'Summer 2018 Final Q1',
       'Fall 2020 MidTerm Q2',
       'Winter 2023 MidTerm Q2',
       'Fall 2025 MidTerm Q2',
@@ -100,8 +116,8 @@ export const MIDTERM_EXAM_FREQUENCY: Record<
     papers: [],
   },
   'knapsack-01': {
-    count: 3,
-    papers: ['Summer 2018 Final Q2', 'Spring 2021 MidTerm Q3', 'Fall 2025 MidTerm Q4'],
+    count: 2,
+    papers: ['Spring 2021 MidTerm Q3', 'Fall 2025 MidTerm Q4'],
   },
   obst: {
     count: 4,
@@ -125,6 +141,200 @@ export const MIDTERM_EXAM_FREQUENCY: Record<
       'Fall 2025 MidTerm Q7',
     ],
   },
+  'greedy-change-making': {
+    count: 0,
+    papers: [],
+  },
+  prim: {
+    count: 0,
+    papers: [],
+  },
+  kruskal: {
+    count: 0,
+    papers: [],
+  },
+  dijkstra: {
+    count: 0,
+    papers: [],
+  },
+  huffman: {
+    count: 0,
+    papers: [],
+  },
+  simplex: {
+    count: 0,
+    papers: [],
+  },
+  'max-flow': {
+    count: 0,
+    papers: [],
+  },
+  'bipartite-matching': {
+    count: 0,
+    papers: [],
+  },
+  'stable-marriage': {
+    count: 0,
+    papers: [],
+  },
+  backtracking: {
+    count: 0,
+    papers: [],
+  },
+  'branch-and-bound': {
+    count: 0,
+    papers: [],
+  },
+};
+
+export const FINAL_EXAM_FREQUENCY: Record<
+  AlgorithmId,
+  { count: number; papers: string[] }
+> = {
+  'comparison-counting-sort': {
+    count: 0,
+    papers: [],
+  },
+  'distribution-counting-sort-v1': {
+    count: 0,
+    papers: [],
+  },
+  'distribution-counting-sort': {
+    count: 2,
+    papers: ['Winter 2023 Final Q1(a)', 'Fall 2025 CFE Final Q1(a)'],
+  },
+  'brute-force-sm': {
+    count: 1,
+    papers: ['Fall 2025 CFE Final Q6'],
+  },
+  horspool: {
+    count: 4,
+    papers: [
+      'Summer 2018 Final Q1',
+      'Winter 2023 Final Q1(a)',
+      'Winter 2023 MakeUp Final Q1(a)',
+      'Fall 2025 Final Q1(b)',
+    ],
+  },
+  'boyer-moore': {
+    count: 3,
+    papers: [
+      'Winter 2023 Final Q1(a)',
+      'Winter 2023 MakeUp Final Q1(b)',
+      'Fall 2025 Final Q1(a)',
+    ],
+  },
+  hashing: {
+    count: 1,
+    papers: ['Winter 2023 Final Q1(b) (String Folding + Quadratic Probing & Chaining)'],
+  },
+  'b-trees': {
+    count: 0,
+    papers: [],
+  },
+  'assembly-line': {
+    count: 0,
+    papers: [],
+  },
+  'matrix-chain': {
+    count: 0,
+    papers: [],
+  },
+  lcs: {
+    count: 0,
+    papers: [],
+  },
+  'coin-row': {
+    count: 2,
+    papers: ['Fall 2025 Final Q2(a)', 'Fall 2025 CFE Final Q2(a)'],
+  },
+  'change-making': {
+    count: 1,
+    papers: ['Fall 2025 Final Q2(b)'],
+  },
+  'coin-collecting': {
+    count: 3,
+    papers: ['Summer 2018 Final Q4', 'Fall 2020 Final Q1', 'Spring 2021 Final Q1'],
+  },
+  'knapsack-01': {
+    count: 3,
+    papers: ['Summer 2018 Final Q2', 'Winter 2023 Final Q2', 'Winter 2023 MakeUp Final Q2'],
+  },
+  obst: {
+    count: 0,
+    papers: [],
+  },
+  warshall: {
+    count: 0,
+    papers: [],
+  },
+  floyd: {
+    count: 1,
+    papers: ['Fall 2025 CFE Final Q2(b)'],
+  },
+  'greedy-change-making': {
+    count: 1,
+    papers: ['Winter 2023 Final Q3(a)'],
+  },
+  prim: {
+    count: 4,
+    papers: [
+      'Fall 2020 Final Q2 & Q3(a)',
+      'Spring 2021 Final Q4(b)',
+      'Winter 2023 MakeUp Final Q3(a)',
+      'Fall 2025 CFE Final Q3(a)',
+    ],
+  },
+  kruskal: {
+    count: 3,
+    papers: [
+      'Fall 2020 Final Q2 & Q3(b)',
+      'Spring 2021 Final Q4(a)',
+      'Fall 2025 CFE Final Q3(b)',
+    ],
+  },
+  dijkstra: {
+    count: 5,
+    papers: [
+      'Fall 2020 Final Q7',
+      'Spring 2021 Final Q2',
+      'Winter 2023 Final Q3(b)',
+      'Winter 2023 MakeUp Final Q3(b)',
+      'Fall 2025 Final Q3',
+    ],
+  },
+  huffman: {
+    count: 1,
+    papers: ['Summer 2018 Final Q3'],
+  },
+  simplex: {
+    count: 3,
+    papers: [
+      'Winter 2023 Final Q4',
+      'Winter 2023 MakeUp Final Q4(a,b)',
+      'Fall 2025 Final Q4',
+    ],
+  },
+  'max-flow': {
+    count: 1,
+    papers: ['Fall 2025 CFE Final Q4'],
+  },
+  'bipartite-matching': {
+    count: 2,
+    papers: ['Fall 2020 Final Q4', 'Spring 2021 Final Q5(a,b)'],
+  },
+  'stable-marriage': {
+    count: 2,
+    papers: ['Fall 2020 Final Q6', 'Spring 2021 Final Q6'],
+  },
+  backtracking: {
+    count: 2,
+    papers: ['Fall 2025 Final Q6', 'Fall 2025 CFE Final Q5(a)'],
+  },
+  'branch-and-bound': {
+    count: 1,
+    papers: ['Fall 2025 CFE Final Q5(b)'],
+  },
 };
 
 export const ALGORITHM_CORE_PURPOSE: Record<AlgorithmId, string> = {
@@ -146,15 +356,31 @@ export const ALGORITHM_CORE_PURPOSE: Record<AlgorithmId, string> = {
   obst: 'Constructs a binary search tree minimizing average search cost given key probabilities',
   warshall: 'Computes the transitive closure (reachability matrix) of a directed graph',
   floyd: 'Finds all-pairs shortest path distances between every vertex in a weighted graph',
+  'greedy-change-making': 'Repeatedly picks the largest coin dᵢ ≤ remaining amount N (fast, locally optimal)',
+  prim: 'Builds a Minimum Spanning Tree by expanding a single tree V_T via the lightest cut edge',
+  kruskal: 'Builds a Minimum Spanning Tree by sorting edges and adding lightest acyclic edges',
+  dijkstra: 'Finds single-source shortest paths by extracting min-distance u* and relaxing edges',
+  huffman: 'Builds an optimal variable-length prefix-free binary code by merging smallest-weight trees',
+  simplex: 'Optimizes a linear objective function over linear inequalities via extreme-point pivoting',
+  'max-flow': 'Maximizes flow from source to sink using BFS shortest-augmenting-path labeling',
+  'bipartite-matching': 'Finds maximum-cardinality matching in a bipartite graph via augmenting paths',
+  'stable-marriage': 'Pairs n men and n women into a stable matching using Gale-Shapley proposals',
+  backtracking: 'Explores state-space trees depth-first, pruning non-promising branches (Subset-Sum / N-Queens)',
+  'branch-and-bound': 'Solves optimization problems via best-first state-space tree bounds (0-1 Knapsack & Assignment)',
 };
 
-export const ALL_ALGORITHMS: AlgorithmMeta[] = [...ALGORITHMS_PART1, ...ALGORITHMS_PART2].map(
-  (alg) => ({
-    ...alg,
-    midtermCount: MIDTERM_EXAM_FREQUENCY[alg.id]?.count ?? 0,
-    midtermPapers: MIDTERM_EXAM_FREQUENCY[alg.id]?.papers ?? [],
-  })
-);
+export const ALL_ALGORITHMS: AlgorithmMeta[] = [
+  ...ALGORITHMS_PART1,
+  ...ALGORITHMS_PART2,
+  ...ALGORITHMS_PART3,
+  ...ALGORITHMS_PART4,
+].map((alg) => ({
+  ...alg,
+  midtermCount: MIDTERM_EXAM_FREQUENCY[alg.id]?.count ?? 0,
+  midtermPapers: MIDTERM_EXAM_FREQUENCY[alg.id]?.papers ?? [],
+  finalCount: FINAL_EXAM_FREQUENCY[alg.id]?.count ?? 0,
+  finalPapers: FINAL_EXAM_FREQUENCY[alg.id]?.papers ?? [],
+}));
 
 export function generateTraceForAlgorithm(
   id: AlgorithmId,
@@ -225,6 +451,76 @@ export function generateTraceForAlgorithm(
       return generateFloydSteps(
         inputs.matrix || '0 8 inf 1; inf 0 1 inf; 4 inf 0 inf; inf 2 9 0'
       );
+    case 'greedy-change-making':
+      return generateGreedyChangeMakingSteps(
+        inputs.amount || '6',
+        inputs.denoms || '1, 3, 4'
+      );
+    case 'prim':
+      return generatePrimSteps(
+        inputs.edges ||
+          'a-b:3, a-f:5, a-e:6, b-c:1, b-f:4, c-f:4, c-d:6, f-d:5, f-e:2, e-d:8',
+        inputs.startNode || 'a'
+      );
+    case 'kruskal':
+      return generateKruskalSteps(
+        inputs.edges ||
+          'a-b:3, a-f:5, a-e:6, b-c:1, b-f:4, c-f:4, c-d:6, d-f:5, e-f:2, d-e:8'
+      );
+    case 'dijkstra':
+      return generateDijkstraSteps(
+        inputs.edges || 'a-b:3, a-d:7, b-c:4, b-d:2, c-d:5, c-e:6, d-e:4',
+        inputs.source || 'a',
+        inputs.directed || 'false'
+      );
+    case 'huffman':
+      return generateHuffmanSteps(
+        inputs.symbols || 'A:0.35, B:0.1, C:0.2, D:0.2, _:0.15',
+        inputs.encodeText || 'DAD',
+        inputs.decodeBits || '10011011011101'
+      );
+    case 'simplex':
+      return generateSimplexSteps(
+        inputs.mode || 'max',
+        inputs.objective || '3, 5',
+        inputs.constraints || '1, 1 <= 4; 1, 3 <= 6',
+        inputs.varNames || 'x, y',
+        inputs.slackNames || 'u, v'
+      );
+    case 'max-flow':
+      return generateMaxFlowSteps(
+        inputs.edges || '1-2:2, 1-4:3, 2-5:3, 2-3:5, 3-6:2, 4-3:1, 5-6:4',
+        inputs.source || '1',
+        inputs.sink || '6',
+        inputs.preset
+      );
+    case 'bipartite-matching':
+      return generateBipartiteMatchingSteps(
+        inputs.v1 || '1, 2, 3',
+        inputs.v2 || '4, 5, 6',
+        inputs.edges || '1-5, 1-6, 2-5, 3-4, 3-5',
+        inputs.initialM || inputs.initialMatching || '1-5'
+      );
+    case 'stable-marriage':
+      return generateStableMarriageSteps(
+        inputs.men || 'X, Y, Z',
+        inputs.women || 'A, B, C',
+        inputs.menPrefs || 'X: A, B, C; Y: C, B, A; Z: C, A, B',
+        inputs.womenPrefs || 'A: Y, Z, X; B: Z, Y, X; C: X, Y, Z'
+      );
+    case 'backtracking':
+      return generateBacktrackingSteps(
+        inputs.problemType || inputs.mode || 'subset-sum',
+        inputs.setS || inputs.set || '2, 4, 7, 9, 11',
+        inputs.targetD || inputs.target || '13',
+        inputs.stopAtFirst || 'false'
+      );
+    case 'branch-and-bound':
+      return generateBranchAndBoundSteps(
+        inputs.problemType || inputs.mode || 'knapsack',
+        inputs.items || '1:4:40, 2:7:42, 3:5:25, 4:3:12',
+        inputs.capacity || '10'
+      );
   }
 }
 
@@ -232,6 +528,7 @@ export interface ExamLoopAnalysisProblem {
   id: string;
   title: string;
   examSource: string;
+  examType?: 'Midterm' | 'Final' | 'Slide';
   pseudocode: string[];
   basicOp: string;
   inputParam: string;
@@ -247,7 +544,8 @@ export const EXAM_LOOP_SUMMATION_PROBLEMS: ExamLoopAnalysisProblem[] = [
   {
     id: 'fall2020-q4',
     title: 'Fall 2020 MidTerm Q4 & Fall 2025 MidTerm Q5: Algorithm Mystry(C, v, n)',
-    examSource: 'Exact 6-pt / 8-pt Question from Past Midterms (Slides 34–42)',
+    examSource: 'Midterm Exam (Fall 2020 Q4 & Fall 2025 Q5 — 8 Marks)',
+    examType: 'Midterm',
     pseudocode: [
       'Algorithm: Mystry(C, v, n)   (Here C is any constant number)',
       '    array m[1..n][0..C]',
@@ -290,9 +588,153 @@ export const EXAM_LOOP_SUMMATION_PROBLEMS: ExamLoopAnalysisProblem[] = [
     finalResult: 'T(n) = (C + 1)n ∈ O(n)',
   },
   {
+    id: 'cfe2025-q1b-matrixpuzzle',
+    title: 'Fall 2025 CFE Final Exam Q1(b): Algorithm MatrixPuzzle(C, w, n)',
+    examSource: 'Final Exam (Fall 2025 CFE Final Q1b — 4 Marks)',
+    examType: 'Final',
+    pseudocode: [
+      'Algorithm: MatrixPuzzle(C, w, n)   (Here C is any constant number)',
+      '    array T[1..n][0..C]',
+      '    array w[1..n]',
+      '    for j ← 0 to C do',
+      '        T[1][j] ← j * 2',
+      '    for i ← 2 to n do',
+      '        for j ← 0 to C do',
+      '            if (w[i] > j) then',
+      '                T[i][j] ← T[i - 1][j]',
+      '            else',
+      '                T[i][j] ← min(T[i - 1][j], 1 + T[i - 1][j - w[i]])',
+      '    return T',
+    ],
+    basicOp: 'Comparison & assignment inside the loops',
+    inputParam: 'n (number of rows), C (constant column bound)',
+    steps: [
+      {
+        lineTitle: 'Step 1: Set up summations for the initialization loop and the nested loops',
+        equation: 'T(n) = ∑_{j=0}^{C} 1  +  ∑_{i=2}^{n} ∑_{j=0}^{C} 1',
+        explanation:
+          'The first for-loop runs j from 0 to C. The second block runs outer loop i from 2 to n and inner loop j from 0 to C.',
+      },
+      {
+        lineTitle: 'Step 2: Evaluate the first summation and inner j-summation',
+        equation: '= (C - 0 + 1) + ∑_{i=2}^{n} (C - 0 + 1)  =  (C + 1) + ∑_{i=2}^{n} (C + 1)',
+        explanation: 'Using ∑_{j=a}^{b} 1 = b - a + 1, the inner sum from 0 to C equals C + 1.',
+      },
+      {
+        lineTitle: 'Step 3: Factor out (C + 1) and evaluate outer i-summation (from 2 to n)',
+        equation: '= (C + 1) + (C + 1)(n - 2 + 1)  =  (C + 1) + (C + 1)(n - 1)',
+        explanation: 'The outer loop runs from i = 2 to n, which is (n - 2 + 1) = (n - 1) iterations.',
+      },
+      {
+        lineTitle: 'Step 4: Simplify and state Big-Oh / Theta class',
+        equation: '= (C + 1)[1 + n - 1]  =  (C + 1)n  ∈  O(n)  (since C is a constant)',
+        explanation: 'Because C is a constant number independent of n, (C + 1)n is linear in n: O(n).',
+      },
+    ],
+    finalResult: 'T(n) = (C + 1)n ∈ O(n)',
+  },
+  {
+    id: 'winter2023-final-q5a',
+    title: 'Winter 2023 Final Exam Q5(a): Logarithmic + Nested Linear Loop Analysis',
+    examSource: 'Final Exam (Winter 2023 Final Q5a — 4 Marks)',
+    examType: 'Final',
+    pseudocode: [
+      '// Analyze the time complexity of the following code fragment:',
+      'i ← n',
+      'while (i ≥ 1) do',
+      '    x ← x + 1',
+      '    i ← i / 2',
+      'for j ← 1 to n do',
+      '    for k ← 1 to n do',
+      '        y ← y + 1',
+    ],
+    basicOp: 'Arithmetic additions (x ← x + 1 and y ← y + 1)',
+    inputParam: 'n (input size)',
+    steps: [
+      {
+        lineTitle: 'Step 1: Analyze the first while-loop (halving i ← i / 2)',
+        equation: 'T₁(n) = ⌊log₂ n⌋ + 1  ∈  Θ(log n)',
+        explanation: 'Since i starts at n and is divided by 2 on each iteration until i < 1, the while-loop executes Θ(log₂ n) times.',
+      },
+      {
+        lineTitle: 'Step 2: Analyze the sequential nested for-loops (j = 1..n, k = 1..n)',
+        equation: 'T₂(n) = ∑_{j=1}^{n} ∑_{k=1}^{n} 1  =  ∑_{j=1}^{n} n  =  n²  ∈  Θ(n²)',
+        explanation: 'Both outer loop j and inner loop k run n times independently, giving n × n = n² iterations.',
+      },
+      {
+        lineTitle: 'Step 3: Sum sequential blocks and take dominant term',
+        equation: 'T(n) = T₁(n) + T₂(n)  =  (⌊log₂ n⌋ + 1) + n²  ∈  O(n²)',
+        explanation: 'For sequential statements, total time is the sum of parts: Θ(log n) + Θ(n²) = Θ(n²).',
+      },
+    ],
+    finalResult: 'T(n) = log₂(n) + n² ∈ O(n²)',
+  },
+  {
+    id: 'winter2023-final-q5b',
+    title: 'Winter 2023 Final Exam Q5(b): Dependent Triangular Loop Analysis',
+    examSource: 'Final Exam (Winter 2023 Final Q5b — 4 Marks)',
+    examType: 'Final',
+    pseudocode: [
+      '// Analyze the time complexity of the following nested loop:',
+      'sum ← 0',
+      'for i ← 1 to n do',
+      '    for j ← 1 to i do',
+      '        sum ← sum + 1',
+    ],
+    basicOp: 'Addition (sum ← sum + 1)',
+    inputParam: 'n (input size)',
+    steps: [
+      {
+        lineTitle: 'Step 1: Express nested loops as a double summation',
+        equation: 'T(n) = ∑_{i=1}^{n} ∑_{j=1}^{i} 1',
+        explanation: 'Outer loop runs i from 1 to n; inner loop runs j from 1 up to i.',
+      },
+      {
+        lineTitle: 'Step 2: Evaluate inner summation',
+        equation: '= ∑_{i=1}^{n} (i - 1 + 1)  =  ∑_{i=1}^{n} i',
+        explanation: 'For a fixed i, the inner loop executes exactly i times.',
+      },
+      {
+        lineTitle: 'Step 3: Apply Gauss’s arithmetic series formula',
+        equation: '= 1 + 2 + 3 + ... + n  =  n(n + 1) / 2  =  ½n² + ½n  ∈  Θ(n²)',
+        explanation: 'The sum of the first n positive integers is n(n + 1)/2, which is quadratic Θ(n²).',
+      },
+    ],
+    finalResult: 'T(n) = n(n + 1)/2 ∈ O(n²)',
+  },
+  {
+    id: 'spring2021-final-q3',
+    title: 'Spring 2021 Final Exam Q3: Greedy Change-Making Loop Summation Analysis',
+    examSource: 'Final Exam (Spring 2021 Final Q3 — 5 Marks)',
+    examType: 'Final',
+    pseudocode: [
+      'GreedyChange(D[1..m], n)   // D sorted: d₁ > d₂ > ... > dₘ',
+      '    for i ← 1 to m do',
+      '        count[i] ← ⌊ n / D[i] ⌋',
+      '        n ← n mod D[i]',
+      '    return count',
+    ],
+    basicOp: 'Integer division and modulo inside the for-loop',
+    inputParam: 'm (number of coin denominations), n (target amount)',
+    steps: [
+      {
+        lineTitle: 'Step 1: Set up the summation for the single for-loop',
+        equation: 'T(m) = ∑_{i=1}^{m} 1',
+        explanation: 'Using integer division and modulo eliminates the inner while-loop, so the loop runs once per denomination i = 1..m.',
+      },
+      {
+        lineTitle: 'Step 2: Evaluate the summation',
+        equation: '= m - 1 + 1  =  m  ∈  Θ(m)',
+        explanation: 'If the denominations are already sorted, the loop takes Θ(m) time (or O(m log m) if sorting is required first).',
+      },
+    ],
+    finalResult: 'T(m) = m ∈ Θ(m) (or O(m log m) with sorting)',
+  },
+  {
     id: 'ccs-formal',
     title: 'Lecture 02 Slide 19–20: Comparison Counting Sort Formal Analysis',
-    examSource: 'Lecture 02 Formal Summation Derivation',
+    examSource: 'Midterm Exam (Winter 2023 MidTerm Q1 & Lecture 02 Slide 19)',
+    examType: 'Midterm',
     pseudocode: [
       'for i ← 0 to n - 1 do Count[i] ← 0',
       'for i ← 0 to n - 2 do',
@@ -330,6 +772,7 @@ export const EXAM_LOOP_SUMMATION_PROBLEMS: ExamLoopAnalysisProblem[] = [
     id: 'horspool-worst',
     title: 'Lecture 04 Slide 64: Horspool’s Algorithm Worst-Case Summation',
     examSource: 'Lecture 04 Slide 64 Nested Loop Derivation',
+    examType: 'Slide',
     pseudocode: [
       'i ← m - 1',
       'while i ≤ n - 1 do',
@@ -362,7 +805,8 @@ export const EXAM_LOOP_SUMMATION_PROBLEMS: ExamLoopAnalysisProblem[] = [
   {
     id: 'floyd-warshall-sum',
     title: 'Lecture 14 Slides 34 & 57: Warshall’s & Floyd’s Triple Nested Loops',
-    examSource: 'Lecture 14 Formal Summation Analysis',
+    examSource: 'Midterm & Final Exam (Fall 2025 CFE Final Q2c & Lecture 14)',
+    examType: 'Final',
     pseudocode: [
       'for k ← 1 to n do',
       '    for i ← 1 to n do',
@@ -845,6 +1289,265 @@ export function generateRandomExamInputForAlgorithm(id: AlgorithmId): {
       return {
         inputs: { matrix: str },
         summaryLabel: `Random Exam Floyd 4×4 Weighted Digraph (with indirect path relaxations)`,
+      };
+    }
+
+    case 'greedy-change-making': {
+      const presets = [
+        { amount: '6', denoms: '1, 3, 4' },
+        { amount: '8', denoms: '1, 4, 6' },
+        { amount: '10', denoms: '1, 5, 7' },
+        { amount: '9', denoms: '1, 3, 5, 6' },
+        { amount: '11', denoms: '1, 4, 7' },
+        { amount: '12', denoms: '1, 5, 8' },
+      ];
+      const chosen = pickRandom(presets);
+      return {
+        inputs: chosen,
+        summaryLabel: `Random Exam Greedy vs. DP Change-Making: N = ${chosen.amount}, Coins = [${chosen.denoms}]`,
+      };
+    }
+
+    case 'prim': {
+      // 6-vertex connected graph (a..f) with randomized weights on the Slide Ex 01 topology
+      const pairs = [
+        ['a', 'b'],
+        ['a', 'f'],
+        ['a', 'e'],
+        ['b', 'c'],
+        ['b', 'f'],
+        ['c', 'f'],
+        ['c', 'd'],
+        ['f', 'd'],
+        ['f', 'e'],
+        ['e', 'd'],
+      ];
+      const edgesList = pairs.map(([u, v]) => `${u}-${v}:${randInt(1, 9)}`);
+      return {
+        inputs: {
+          edges: edgesList.join(', '),
+          startNode: 'a',
+        },
+        summaryLabel: `Random Exam Prim MST (6 Vertices a..f, 10 Weighted Edges, Start = a)`,
+      };
+    }
+
+    case 'kruskal': {
+      const pairs = [
+        ['a', 'b'],
+        ['a', 'f'],
+        ['a', 'e'],
+        ['b', 'c'],
+        ['b', 'f'],
+        ['c', 'f'],
+        ['c', 'd'],
+        ['d', 'f'],
+        ['e', 'f'],
+        ['d', 'e'],
+      ];
+      const edgesList = pairs.map(([u, v]) => `${u}-${v}:${randInt(1, 9)}`);
+      return {
+        inputs: {
+          edges: edgesList.join(', '),
+        },
+        summaryLabel: `Random Exam Kruskal MST (6 Vertices a..f, 10 Weighted Edges)`,
+      };
+    }
+
+    case 'dijkstra': {
+      const useDirected = Math.random() < 0.5;
+      if (!useDirected) {
+        const pairs = [
+          ['a', 'b'],
+          ['a', 'd'],
+          ['b', 'c'],
+          ['b', 'd'],
+          ['c', 'd'],
+          ['c', 'e'],
+          ['d', 'e'],
+        ];
+        const edgesList = pairs.map(([u, v]) => `${u}-${v}:${randInt(1, 8)}`);
+        return {
+          inputs: {
+            edges: edgesList.join(', '),
+            source: 'a',
+            directed: 'false',
+          },
+          summaryLabel: `Random Exam Dijkstra (5 Vertices a..e, Undirected, Source = a)`,
+        };
+      } else {
+        const pairs = [
+          ['s', 't'],
+          ['s', 'y'],
+          ['t', 'x'],
+          ['t', 'y'],
+          ['y', 't'],
+          ['y', 'x'],
+          ['y', 'z'],
+          ['x', 'z'],
+          ['z', 'x'],
+        ];
+        const edgesList = pairs.map(([u, v]) => `${u}-${v}:${randInt(1, 9)}`);
+        return {
+          inputs: {
+            edges: edgesList.join(', '),
+            source: 's',
+            directed: 'true',
+          },
+          summaryLabel: `Random Exam Dijkstra (5 Vertices s,t,x,y,z, Directed, Source = s)`,
+        };
+      }
+    }
+
+    case 'huffman': {
+      const useCounts = Math.random() < 0.5;
+      if (useCounts) {
+        const syms = ['a', 'b', 'c', 'd', 'e', 'f'];
+        const weights = syms.map(() => randInt(5, 45));
+        const symbolsStr = syms.map((s, idx) => `${s}:${weights[idx]}`).join(', ');
+        return {
+          inputs: {
+            symbols: symbolsStr,
+            encodeText: 'badface',
+            decodeBits: '10110011',
+          },
+          summaryLabel: `Random Exam Huffman Coding (6 Symbols a..f): [${symbolsStr}]`,
+        };
+      } else {
+        const syms = ['A', 'B', 'C', 'D', '_'];
+        const raw = syms.map(() => randInt(1, 5));
+        const sum = raw.reduce((a, b) => a + b, 0);
+        const probs = raw.map((x) => Number((x / sum).toFixed(2)));
+        const diff = Number((1 - probs.reduce((a, b) => a + b, 0)).toFixed(2));
+        probs[0] = Number((probs[0] + diff).toFixed(2));
+        const symbolsStr = syms.map((s, idx) => `${s}:${probs[idx]}`).join(', ');
+        return {
+          inputs: {
+            symbols: symbolsStr,
+            encodeText: 'BAD_AD',
+            decodeBits: '0110101',
+          },
+          summaryLabel: `Random Exam Huffman Coding (5 Symbols): [${symbolsStr}]`,
+        };
+      }
+    }
+
+    case 'simplex': {
+      const c1 = randInt(2, 6);
+      const c2 = randInt(3, 8);
+      const b1 = randInt(4, 8);
+      const b2 = randInt(6, 12);
+      return {
+        inputs: {
+          objective: `${c1}, ${c2}`,
+          constraints: `1, 1 <= ${b1}; 1, 2 <= ${b2}`,
+          mode: 'max',
+        },
+        summaryLabel: `Random Exam Simplex LP: Maximize z = ${c1}x₁ + ${c2}x₂ subject to x₁+x₂ ≤ ${b1}, x₁+2x₂ ≤ ${b2}`,
+      };
+    }
+
+    case 'max-flow': {
+      const c12 = randInt(2, 5);
+      const c14 = randInt(3, 6);
+      const c25 = randInt(3, 5);
+      const c23 = randInt(3, 6);
+      const c36 = randInt(2, 5);
+      const c43 = randInt(1, 3);
+      const c56 = randInt(3, 6);
+      const edges = `1-2:${c12}, 1-4:${c14}, 2-5:${c25}, 2-3:${c23}, 3-6:${c36}, 4-3:${c43}, 5-6:${c56}`;
+      return {
+        inputs: { edges, source: '1', sink: '6' },
+        summaryLabel: `Random Exam Max-Flow Network (6 Vertices 1..6, Source = 1, Sink = 6)`,
+      };
+    }
+
+    case 'bipartite-matching': {
+      const presets = [
+        {
+          v1: '1, 2, 3',
+          v2: '4, 5, 6',
+          edges: '1-4, 1-5, 1-6, 2-5, 2-6, 3-5',
+          initialMatching: '1-5',
+        },
+        {
+          v1: '1, 2, 3, 4',
+          v2: '5, 6, 7, 8',
+          edges: '1-5, 1-6, 2-5, 2-7, 3-6, 3-8, 4-7, 4-8',
+          initialMatching: '1-5, 3-6',
+        },
+      ];
+      const chosen = pickRandom(presets);
+      return {
+        inputs: chosen,
+        summaryLabel: `Random Exam Bipartite Matching: V₁={${chosen.v1}}, V₂={${chosen.v2}}, M₀={${chosen.initialMatching}}`,
+      };
+    }
+
+    case 'stable-marriage': {
+      const presets = [
+        {
+          men: 'X, Y, Z',
+          women: 'A, B, C',
+          menPrefs: 'X: A, B, C; Y: B, A, C; Z: A, B, C',
+          womenPrefs: 'A: Y, X, Z; B: X, Y, Z; C: X, Y, Z',
+        },
+        {
+          men: 'Bob, Jim, Tom',
+          women: 'Ann, Lea, Sue',
+          menPrefs: 'Bob: Lea, Ann, Sue; Jim: Lea, Sue, Ann; Tom: Sue, Lea, Ann',
+          womenPrefs: 'Ann: Jim, Tom, Bob; Lea: Tom, Bob, Jim; Sue: Jim, Tom, Bob',
+        },
+      ];
+      const chosen = pickRandom(presets);
+      return {
+        inputs: chosen,
+        summaryLabel: `Random Exam Stable Marriage (3×3 Gale-Shapley Instance: Men={${chosen.men}}, Women={${chosen.women}})`,
+      };
+    }
+
+    case 'backtracking': {
+      const presets = [
+        { problemType: 'subset-sum', setS: '2, 4, 7, 9, 11', targetD: '13', stopAtFirst: 'false' },
+        { problemType: 'subset-sum', setS: '1, 5, 7, 9', targetD: '10', stopAtFirst: 'false' },
+        { problemType: 'subset-sum', setS: '3, 5, 6, 7', targetD: '15', stopAtFirst: 'false' },
+        { problemType: 'n-queens', setS: '4', targetD: '4', stopAtFirst: 'false' },
+      ];
+      const chosen = pickRandom(presets);
+      return {
+        inputs: chosen,
+        summaryLabel:
+          chosen.problemType === 'n-queens'
+            ? `Random Exam Backtracking: 4-Queens State-Space Tree`
+            : `Random Exam Subset-Sum Backtracking: S = {${chosen.setS}}, d = ${chosen.targetD}`,
+      };
+    }
+
+    case 'branch-and-bound': {
+      const presets = [
+        {
+          problemType: 'knapsack',
+          items: '1:2:12, 2:1:10, 3:3:20, 4:2:15',
+          capacity: '5',
+        },
+        {
+          problemType: 'knapsack',
+          items: '1:4:40, 2:7:42, 3:5:25, 4:3:12',
+          capacity: '10',
+        },
+        {
+          problemType: 'assignment',
+          items: '9, 2, 7, 8; 6, 4, 3, 7; 5, 8, 1, 8; 7, 6, 9, 4',
+          capacity: '4',
+        },
+      ];
+      const chosen = pickRandom(presets);
+      return {
+        inputs: chosen,
+        summaryLabel:
+          chosen.problemType === 'assignment'
+            ? `Random Exam Branch & Bound: 4×4 Assignment Problem`
+            : `Random Exam Branch & Bound 0-1 Knapsack (W = ${chosen.capacity}, Items = [${chosen.items}])`,
       };
     }
   }
